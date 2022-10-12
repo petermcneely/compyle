@@ -1,0 +1,8 @@
+"""
+This is an example program in compyle
+"""
+
+hello = 22
+world = 20 # this comment should get ignored
+
+return hello + world
