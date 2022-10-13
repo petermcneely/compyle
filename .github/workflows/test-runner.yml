@@ -15,5 +15,17 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-      - name: Run make all
-        run: make all
+      - name: Build the Docker image with ocaml
+        run: docker build . --file Dockerfile --tag ocamlbuild
+
+      - name: Clean
+        run: make clean
+
+      - name: Compile
+        run: docker run -v $(pwd)/:/workspace ocamlbuild test.native
+
+      - name: Test
+        run: make tests
+
+      - name: Check
+        run: make check
