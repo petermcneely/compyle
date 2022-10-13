@@ -25,7 +25,7 @@ jobs:
         run: docker run -v $(pwd)/:/workspace ocamlbuild test.native
 
       - name: Test
-        run: make tests
+        run: ./test.native
 
       - name: Check
         run: make check
