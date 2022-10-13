@@ -1,7 +1,7 @@
 all: clean tests check
 
 clean:
-	rm -f test_percentage.txt
+	rm -rf ./_build
 	rm -f test.native
 
 tests:

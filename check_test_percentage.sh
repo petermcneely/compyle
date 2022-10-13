@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 c=$(cat ./test_percentage.txt)
 if [ $c = "100.00" ]; then
