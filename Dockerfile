@@ -21,4 +21,11 @@ ENV OCAML_TOPLEVEL_PATH=/root/.opam/${OCAML_VERSION}/lib/toplevel
 ENV MANPATH=:/root/.opam/${OCAML_VERSION}/man
 ENV PATH=/root/.opam/${OCAML_VERSION}/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-ENTRYPOINT ["ocamlbuild"]
+COPY ast.ml /workspace/ast.ml
+COPY parser.mly /workspace/parser.mly
+COPY scanner.mll /workspace/scanner.mll
+COPY test.ml /workspace/test.ml
+
+RUN ocamlbuild test.native
+
+CMD ["/workspace/test.native"]
