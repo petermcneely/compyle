@@ -22,6 +22,4 @@ jobs:
         run: docker run -v $(pwd)/test_percentage.txt:/workspace/test_percentage.txt test-runner
 
       - name: Check
-        run: |
-          ls -al
-          make check
+        run: make check
