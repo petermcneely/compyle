@@ -18,14 +18,14 @@ jobs:
       - name: Build the Docker image with ocaml
         run: docker build . --file Dockerfile --tag ocamlbuild
 
-      - name: Clean
-        run: make clean
-
-      - name: Compile
-        run: docker run -v $(pwd)/:/workspace ocamlbuild test.native
-
       - name: Test
-        run: ./test.native
+        run: |
+          make clean
+          docker run -v $(pwd)/:/workspace ocamlbuild test.native
+          ls -al
+          ./test.native
 
       - name: Check
-        run: make check
+        run: |
+          ls -al
+          make check
