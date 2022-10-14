@@ -33,6 +33,12 @@ let output = ["LITERAL: 3";"PLUS";"LITERAL: 5"] in
 run_test test_case addition output;
 
 
+let float_test = "Parses floats being added together" in
+let input = "3.0 + 5.0" in 
+let output = ["FLOAT: 3.";"PLUS";"FLOAT: 5."] in
+run_test float_test input output; 
+
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)

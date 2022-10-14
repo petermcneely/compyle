@@ -31,6 +31,7 @@ set -e
 make
 ```
 4. save and quit
+5. `chmod 755 pre-commit`
 
 The makefile will now run on each commit :tada:
 

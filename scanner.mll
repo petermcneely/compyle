@@ -9,6 +9,7 @@
  *)
 let digit = ['0'-'9']
 let letter = ['a'-'z' 'A'-'Z']
+let decim = digit+ "." digit*
 
 (*
   entrypoint (token):
@@ -47,7 +48,7 @@ rule token = parse
 | "True"      { BLIT(true)  }
 | "False"     { BLIT(false) }
 | digit+ as lem  { LITERAL(int_of_string lem) }
-| digit+ ^ '.' ^ digit* as lem { FLOAT(float_of_string lem) } 
+| decim as lem { FLOAT(float_of_string lem) } 
 | letter (digit | letter | '_')* as lem { ID(lem) }
 | eof { EOF }
 | _ as char { raise (Failure("illegal character " ^ Char.escaped char)) }
