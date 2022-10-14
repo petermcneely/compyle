@@ -12,6 +12,7 @@ open Ast
 %token RETURN COMMA
 %token INDENT NEWLINE
 %token <int> LITERAL
+%token <float> FLOAT
 %token <bool> BLIT
 %token <string> ID
 %token EOF
@@ -57,4 +58,5 @@ one_token:
   | BOOL { "BOOL" }
   | BLIT { "BOOL: " ^ string_of_bool $1 }
   | LITERAL { "LITERAL: " ^ string_of_int $1 }
+  | FLOAT { "FLOAT: " ^ string_of_float $1 }
   | ID { "ID: " ^ $1 }
