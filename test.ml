@@ -61,20 +61,22 @@ let output = [
 run_test test_case while_loop output;
 
 (*
-Parses break
+Parses break and continue
 *)
-let test_case = "Parses break" in
+let test_case = "Parses break and continue" in
 let break = "count = 0\n\
             while True:\n\
-              \tif count == 5:\n\
-                \t\tbreak\n\
-              \tcount = count + 1" in
+              \tif count < 5:\n\
+                \t\tcount = count + 1\n\
+                \t\tcontinue\n\
+              \tbreak" in
 let output = [
   "ID: count"; "ASSIGN"; "LITERAL: 0"; "NEWLINE";
   "WHILE"; "BOOL: true"; "COLON"; "NEWLINE";
-  "INDENT"; "IF"; "ID: count"; "EQ"; "LITERAL: 5"; "COLON"; "NEWLINE";
-  "INDENT"; "INDENT"; "BREAK"; "NEWLINE";
-  "INDENT"; "ID: count"; "ASSIGN"; "ID: count"; "PLUS"; "LITERAL: 1"
+  "INDENT"; "IF"; "ID: count"; "LT"; "LITERAL: 5"; "COLON"; "NEWLINE";
+  "INDENT"; "INDENT"; "ID: count"; "ASSIGN"; "ID: count"; "PLUS"; "LITERAL: 1"; "NEWLINE";
+  "INDENT"; "INDENT"; "CONTINUE"; "NEWLINE";
+  "INDENT"; "BREAK"
 ] in
 run_test test_case break output;
 
