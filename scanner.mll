@@ -42,6 +42,11 @@ rule token = parse
 | "or"        { OR }
 | "if"        { IF }
 | "else"      { ELSE }
+| "for"       { FOR }
+| "in"        { IN }
+| "range"     { RANGE }
+| "break"     { BREAK }
+| "continue"  { CONTINUE }
 | "while"     { WHILE }
 | "return"    { RETURN }
 | "True"      { BLIT(true)  }

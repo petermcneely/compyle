@@ -8,7 +8,9 @@ open Ast
 %token SEMI COLON LPAREN RPAREN LBRACE RBRACE
 %token PLUS MINUS MULT DIV MOD ASSIGN
 %token EQ NEQ LT AND OR
-%token IF ELSE WHILE INT BOOL
+%token IF ELSE INT BOOL
+%token FOR IN RANGE BREAK CONTINUE
+%token WHILE
 %token RETURN COMMA
 %token INDENT NEWLINE
 %token <int> LITERAL
@@ -58,3 +60,8 @@ one_token:
   | BLIT { "BOOL: " ^ string_of_bool $1 }
   | LITERAL { "LITERAL: " ^ string_of_int $1 }
   | ID { "ID: " ^ $1 }
+  | FOR { "FOR" }
+  | IN { "IN" }
+  | RANGE { "RANGE" }
+  | BREAK { "BREAK" }
+  | CONTINUE { "CONTINUE" }

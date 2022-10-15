@@ -19,7 +19,7 @@ let run_test ?(debug: bool = false) (test_case: string) (input: string) (output:
   count_tests := (!count_tests + 1);
   let parsed_program = parse_program input in
   if debug then print_endline (string_of_program parsed_program);
-  if List.equal (fun x y -> if debug then print_endline ("x: " ^ x ^ "y: " ^ y); x = y) parsed_program output then
+  if List.equal (fun x y -> if debug then print_endline ("actual: " ^ x ^ "; excepted: " ^ y); x = y) parsed_program output then
     pass_test()
   else
     print_endline("\tOOPS") in
@@ -32,6 +32,51 @@ let addition = "3 + 5" in
 let output = ["LITERAL: 3";"PLUS";"LITERAL: 5"] in
 run_test test_case addition output;
 
+(*
+Parses for loop
+*)
+let test_case = "Parses for loop" in
+let for_loop = "count = 0\n\
+                for i in range(1, 10):\n\
+                  \tcount = count + 1" in
+let output = [
+  "ID: count"; "ASSIGN"; "LITERAL: 0"; "NEWLINE";
+  "FOR"; "ID: i"; "IN"; "RANGE"; "LPAREN"; "LITERAL: 1"; "COMMA"; "LITERAL: 10"; "RPAREN"; "COLON"; "NEWLINE";
+  "INDENT"; "ID: count"; "ASSIGN"; "ID: count"; "PLUS"; "LITERAL: 1"
+] in
+run_test test_case for_loop output;
+
+(*
+Parses while loop
+*)
+let test_case = "Parses while loop" in
+let while_loop = "count = 0\n\
+                  while count < 10:\n\
+                    \tcount = count + 1" in
+let output = [
+  "ID: count"; "ASSIGN"; "LITERAL: 0"; "NEWLINE";
+  "WHILE"; "ID: count"; "LT"; "LITERAL: 10"; "COLON"; "NEWLINE";
+  "INDENT"; "ID: count"; "ASSIGN"; "ID: count"; "PLUS"; "LITERAL: 1"
+] in
+run_test test_case while_loop output;
+
+(*
+Parses break
+*)
+let test_case = "Parses break" in
+let break = "count = 0\n\
+            while True:\n\
+              \tif count == 5:\n\
+                \t\tbreak\n\
+              \tcount = count + 1" in
+let output = [
+  "ID: count"; "ASSIGN"; "LITERAL: 0"; "NEWLINE";
+  "WHILE"; "BOOL: true"; "COLON"; "NEWLINE";
+  "INDENT"; "IF"; "ID: count"; "EQ"; "LITERAL: 5"; "COLON"; "NEWLINE";
+  "INDENT"; "INDENT"; "BREAK"; "NEWLINE";
+  "INDENT"; "ID: count"; "ASSIGN"; "ID: count"; "PLUS"; "LITERAL: 1"
+] in
+run_test test_case break output;
 
 (*
 Boiler plate set up for processing the results of the tests   
