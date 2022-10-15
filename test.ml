@@ -42,8 +42,8 @@ run_test float_test input output;
 
 (* Test function definition *)
 let func_test = "Parses a function definition" in
-let input = "def add(x: int, y: int) return x + y" in
-let output = ["DEFINE"; "ID: add"; "LPAREN"; "ID: x"; "COLON"; "INT"; "COMMA"; "ID: y"; "COLON"; "INT"; "RPAREN"; "RETURN"; "ID: x"; "PLUS"; "ID: y"] in
+let input = "def add(x: int, y: int): return x + y" in
+let output = ["DEFINE"; "ID: add"; "LPAREN"; "ID: x"; "COLON"; "INT"; "COMMA"; "ID: y"; "COLON"; "INT"; "RPAREN"; "COLON"; "RETURN"; "ID: x"; "PLUS"; "ID: y"] in
 run_test func_test input output;
 
 (*
