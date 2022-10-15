@@ -47,6 +47,8 @@ rule token = parse
 | "return"    { RETURN }
 | "True"      { BLIT(true)  }
 | "False"     { BLIT(false) }
+| "def"       { DEFINE }
+| "int"       { INT }
 | digit+ as lem  { LITERAL(int_of_string lem) }
 | decim as lem { FLOAT(float_of_string lem) } 
 | letter (digit | letter | '_')* as lem { ID(lem) }

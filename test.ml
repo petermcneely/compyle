@@ -14,7 +14,7 @@ let pass_test () =
   passed_tests := (!passed_tests + 1);
   print_endline "\tYAY" in
 
-let run_test ?(debug: bool = false) (test_case: string) (input: string) (output: string list): unit =
+let run_test ?(debug: bool = true) (test_case: string) (input: string) (output: string list): unit =
   print_endline (test_case ^ ":");
   count_tests := (!count_tests + 1);
   let parsed_program = parse_program input in
@@ -27,17 +27,24 @@ let run_test ?(debug: bool = false) (test_case: string) (input: string) (output:
 (*
 The actual test cases   
 *)
+
+(* Test int addition *)
 let test_case = "Parses literals being added together" in
 let addition = "3 + 5" in
 let output = ["LITERAL: 3";"PLUS";"LITERAL: 5"] in
 run_test test_case addition output;
 
-
+(* Test float addition *)
 let float_test = "Parses floats being added together" in
 let input = "3.0 + 5.0" in 
 let output = ["FLOAT: 3.";"PLUS";"FLOAT: 5."] in
 run_test float_test input output; 
 
+(* Test function definition *)
+let func_test = "Parses a function definition" in
+let input = "def add(x: int, y: int) return x + y" in
+let output = ["DEFINE"; "ID: add"; "LPAREN"; "ID: x"; "COLON"; "INT"; "COMMA"; "ID: y"; "COLON"; "INT"; "RPAREN"; "RETURN"; "ID: x"; "PLUS"; "ID: y"] in
+run_test func_test input output;
 
 (*
 Boiler plate set up for processing the results of the tests   

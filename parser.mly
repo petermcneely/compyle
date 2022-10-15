@@ -9,7 +9,7 @@ open Ast
 %token PLUS MINUS MULT DIV MOD ASSIGN
 %token EQ NEQ LT AND OR
 %token IF ELSE WHILE INT BOOL
-%token RETURN COMMA
+%token RETURN DEFINE COMMA
 %token INDENT NEWLINE
 %token <int> LITERAL
 %token <float> FLOAT
@@ -54,6 +54,7 @@ one_token:
   | ELSE { "ELSE" }
   | WHILE { "WHILE" }
   | RETURN { "RETURN" }
+  | DEFINE { "DEFINE" }
   | INT { "INT" }
   | BOOL { "BOOL" }
   | BLIT { "BOOL: " ^ string_of_bool $1 }
