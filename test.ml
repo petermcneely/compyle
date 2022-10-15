@@ -19,7 +19,7 @@ let run_test ?(debug: bool = false) (test_case: string) (input: string) (output:
   count_tests := (!count_tests + 1);
   let parsed_program = parse_program input in
   if debug then print_endline (string_of_program parsed_program);
-  if List.equal (fun x y -> if debug then print_endline ("actual: " ^ x ^ "; excepted: " ^ y); x = y) parsed_program output then
+  if List.equal (fun x y -> if debug then print_endline ("actual: " ^ x ^ "; expected: " ^ y); x = y) parsed_program output then
     pass_test()
   else
     print_endline("\tOOPS") in
