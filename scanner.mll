@@ -40,6 +40,7 @@ rule token = parse
 | '<'         { LT }
 | "and"       { AND }
 | "or"        { OR }
+| "not"       { NOT }
 | "if"        { IF }
 | "else"      { ELSE }
 | "while"     { WHILE }
