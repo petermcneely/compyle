@@ -51,6 +51,7 @@ one_token:
   | OR { "OR" }
   | IF { "IF" }
   | ELSE { "ELSE" }
+  | ELIF { "ELIF" }
   | WHILE { "WHILE" }
   | RETURN { "RETURN" }
   | INT { "INT" }

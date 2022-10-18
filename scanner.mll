@@ -41,6 +41,7 @@ rule token = parse
 | "and"       { AND }
 | "or"        { OR }
 | "if"        { IF }
+| "elif"      { ELIF }
 | "else"      { ELSE }
 | "while"     { WHILE }
 | "return"    { RETURN }
