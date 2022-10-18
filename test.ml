@@ -37,17 +37,17 @@ Tests basic logical operators
 *)
 let test_case = "Parses literals being compared" in
 let comparing = "8 > 5 and 3 < 9" in
-let output = ["LITERAL: 8";"GT";"LITERAL: 5";"AND";"LITERAL: 3";"LT";"LITERAL 9"] in
+let output = ["LITERAL: 8";"GT";"LITERAL: 5";"AND";"LITERAL: 3";"LT";"LITERAL: 9"] in
 run_test test_case comparing output;
 
 let test_case = "Parses literals being compared" in
-let comparing = "8 >= 5 or 3 =< 9" in
-let output = ["LITERAL: 8";"GEQ";"LITERAL: 5";"OR";"LITERAL: 3";"LEQ";"LITERAL 9"] in
+let comparing = "8 >= 5 or 3 <= 9" in
+let output = ["LITERAL: 8";"GEQ";"LITERAL: 5";"OR";"LITERAL: 3";"LEQ";"LITERAL: 9"] in
 run_test test_case comparing output;
 
 let test_case = "Parses literals being compared" in
 let comparing = "8 == 5 and 3 != 9" in
-let output = ["LITERAL: 8";"EQ";"LITERAL: 5";"AND";"LITERAL: 3";"NEQ";"LITERAL 9"] in
+let output = ["LITERAL: 8";"EQ";"LITERAL: 5";"AND";"LITERAL: 3";"NEQ";"LITERAL: 9"] in
 run_test test_case comparing output;
 
 let test_case = "Parses not operator" in
