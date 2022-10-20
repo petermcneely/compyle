@@ -38,8 +38,12 @@ rule token = parse
 | "=="        { EQ }
 | "!="        { NEQ }
 | '<'         { LT }
+| '>'         { GT }
+| "<="        { LEQ }
+| ">="        { GEQ }
 | "and"       { AND }
 | "or"        { OR }
+| "not"       { NOT }
 | "if"        { IF }
 | "else"      { ELSE }
 | "while"     { WHILE }

@@ -7,7 +7,8 @@ open Ast
 /* these token names do not matter, but they just need to line up with the expectation of how it gets used */
 %token SEMI COLON LPAREN RPAREN LBRACE RBRACE
 %token PLUS MINUS MULT DIV MOD ASSIGN
-%token EQ NEQ LT AND OR
+%token EQ NEQ LT GT LEQ GEQ
+%token AND OR NOT
 %token IF ELSE WHILE INT BOOL
 %token RETURN COMMA
 %token INDENT NEWLINE
@@ -47,8 +48,12 @@ one_token:
   | EQ { "EQ" }
   | NEQ { "NEQ" }
   | LT { "LT" }
+  | GT { "GT" }
+  | LEQ { "LEQ" }
+  | GEQ { "GEQ" }
   | AND { "AND" }
   | OR { "OR" }
+  | NOT { "NOT" }
   | IF { "IF" }
   | ELSE { "ELSE" }
   | WHILE { "WHILE" }
