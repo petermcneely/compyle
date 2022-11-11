@@ -48,12 +48,11 @@ type stmt =
   | Expr of expr
   | Function of string * expr list * stmt
   | Return of expr
-  | If of expr * stmt * stmt list * stmt list
+  | If of expr * stmt * stmt list
   | While of expr * stmt
   | For of string * expr * stmt
   | Block of (indent list * stmt) list
   | Elif of expr * stmt
-  | Else of stmt
 
 type program = stmt list
 
@@ -114,12 +113,11 @@ let rec string_of_stmt = function
   | Expr e -> string_of_expr e ^ "\n"
   | Function (fname, args, stmt) -> "def " ^ fname ^ "(" ^ string_of_exprs args ^ "): " ^ string_of_stmt stmt
   | Return e -> "return " ^ string_of_expr e ^ "\n"
-  | If (e, if_block, elif_blocks, else_blocks) -> "if " ^ string_of_expr e ^ ": " ^ string_of_stmt if_block ^ (String.concat "\n" (List.map string_of_stmt elif_blocks)) ^ (String.concat "\n" (List.map string_of_else_block else_blocks)) ^ "\n"
+  | If (e, if_block, elif_blocks) -> "if " ^ string_of_expr e ^ ":\n" ^ string_of_stmt if_block ^ (String.concat "\n" (List.map string_of_stmt elif_blocks)) ^ "\n"
   | While (e, stmt) -> "while " ^ string_of_expr e ^ ": " ^ string_of_stmt stmt
   | For (v, e, s) -> "for " ^ v ^ " in " ^ string_of_expr e ^ ": " ^ string_of_stmt s
   | Block l -> string_of_block l
   | Elif (e, s) -> string_of_elif_block (e, s)
-  | Else s -> string_of_else_block s
 
 and string_of_elif_block (expr, stmt) = "elif " ^ string_of_expr expr ^ ": " ^ string_of_stmt stmt
 

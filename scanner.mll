@@ -7,7 +7,6 @@
  * declaration section
  * can be used to name frequently-occurring regular expressions
  *)
-let alpha = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let e = ['e' 'E']
 let sign = ['+' '-']
@@ -81,7 +80,7 @@ rule token = parse
 (* Primitive Types *)
 | "True" { BOOL_LITERAL(true) }
 | "False" { BOOL_LITERAL(false) }
-| (alpha | '_') (alpha digit | '-' | '_')* as lexeme { ID(lexeme) }
+| ['a'-'z' '_']['a'-'z' 'A'-'Z' '0'-'9' '-' '_']* as lexeme { ID(lexeme) }
 | digit+ as i { INT_LITERAL(int_of_string i) } 
 | float as f { FLOAT_LITERAL(float_of_string f)}
 | (("\'.*\'") | ("\".*\"")) as s { STRING_LITERAL(s) }

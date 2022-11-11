@@ -1,8 +1,6 @@
-"""
-This is an example program in compyle
-"""
+hello = 2
+world = 4
+hello + world
 
-hello = 22
-world = 20 # this comment should get ignored
-
-return hello + world
+if world == 4:
+	return hello

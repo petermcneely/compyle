@@ -44,8 +44,10 @@ open Ast
 program: stmt_list EOF { $1 }
 
 stmt_list:
+	| { [] }
 	| stmt { [$1] }
-	| stmt COMMA stmt_list { $1 :: $3 }
+	| stmt NEWLINE stmt_list { $1 :: $3 }
+	| NEWLINE stmt_list { $2 }
 
 stmt:
 	expr { Expr($1) }	
@@ -59,14 +61,15 @@ stmt:
 	| CONTINUE { Continue }
 
 indents:
-  INDENT { [Indent] }
+	INDENT { [Indent] }
 	| INDENT indents  { Indent :: $2 }
 
-block: block_stmt { Block($1) }
+block:
+	block_stmt { Block($1) }
 
 block_stmt:
-  { [] }
-  | indents stmt NEWLINE block_stmt { ($1, $2) :: $4 }
+	NEWLINE indents stmt { [($2, $3)] }
+	| NEWLINE indents stmt block_stmt { ($2, $3) :: $4 }
 
 function_stmt:
 	DEF ID LPAREN id_opt RPAREN COLON block { Function($2, $4, $7) }
@@ -82,15 +85,11 @@ id_list:
 return_stmt: RETURN expr { Return($2) }
 
 if_stmt:
-	IF expr COLON block elif_stmt else_stmt { If($2, $4, $5, $6) }
+	IF expr COLON block { If($2, $4, []) }
 
-elif_stmt:
-	/* nothing */ { [] }
-	| ELIF expr COLON block elif_stmt { Elif($2, $4) :: $5 }
-
-else_stmt:
-	/* nothing */ { [] }
-	| ELSE COLON block { [Else($3)] }
+// elif_stmt:
+// 	ELIF expr COLON block { [Elif($2, $4)] }
+// 	| ELIF expr COLON block elif_stmt { Elif($2, $4) :: $5 }
 
 while_stmt:
 	WHILE expr COLON block { While($2, $4) }
