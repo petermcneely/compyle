@@ -22,7 +22,7 @@ open Ast
 %token EOF
 
 %start program
-%type <Ast.stmtseq> program
+%type <Ast.program> program
 
 %left INDENT
 %left NEWLINE
@@ -122,13 +122,13 @@ expr:
 	| expr EXP expr          { Binop($1, Exp, $3)  }
 	| expr FDIVIDE expr      { Binop($1, FDiv, $3) }
 	| ID ASSIGN expr        { Asn($1, $3) }
-	| ID PLUS_ASSIGN expr   { AugAsn($1, Add, $3) }
-	| ID MINUS_ASSIGN expr  { AugAsn($1, Sub, $3)  }
-	| ID TIMES_ASSIGN expr  { AugAsn($1, Mult, $3) }
-	| ID DIV_ASSIGN expr    { AugAsn($1, Div, $3)  }
-	| ID MOD_ASSIGN expr    { AugAsn($1, Mod, $3)  }
-	| ID EXP_ASSIGN expr    { AugAsn($1, Exp, $3)  }
-	| ID FDIV_ASSIGN expr   { AugAsn($1, FDiv, $3) }
+	| ID PLUS_ASSIGN expr   { AugAsn($1, AAAdd, $3) }
+	| ID MINUS_ASSIGN expr  { AugAsn($1, AASub, $3)  }
+	| ID TIMES_ASSIGN expr  { AugAsn($1, AAMult, $3) }
+	| ID DIV_ASSIGN expr    { AugAsn($1, AADiv, $3)  }
+	| ID MOD_ASSIGN expr    { AugAsn($1, AAMod, $3)  }
+	| ID EXP_ASSIGN expr    { AugAsn($1, AAExp, $3)  }
+	| ID FDIV_ASSIGN expr   { AugAsn($1, AAFDiv, $3) }
 	| expr EQ expr     { Binop($1, Eq, $3)  }
 	| expr NEQ expr    { Binop($1, Neq, $3) }
 	| expr GT expr     { Binop($1, Gt, $3)  }
