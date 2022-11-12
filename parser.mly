@@ -5,8 +5,8 @@ open Ast
 %}
 
 %token COMMA COLON NEWLINE PERIOD
-%token INDENT
-%token DEF RETURN
+%token INDENT DEDENT
+%token DEF RETURN PRINT
 %token LPAREN RPAREN LBRACKET RBRACKET
 %token IF ELIF ELSE WHILE FOR IN
 %token BREAK CONTINUE
@@ -23,9 +23,6 @@ open Ast
 
 %start program
 %type <Ast.program> program
-
-%left INDENT
-%left NEWLINE
 
 %right ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN EXP_ASSIGN FDIV_ASSIGN
 %left OR
@@ -45,31 +42,21 @@ program: stmt_list EOF { $1 }
 
 stmt_list:
 	| { [] }
-	| stmt { [$1] }
-	| stmt NEWLINE stmt_list { $1 :: $3 }
-	| NEWLINE stmt_list { $2 }
+	| stmt stmt_list { $1 :: $2 }
 
 stmt:
-	expr { Expr($1) }	
-	| block { $1 }
+	expr NEWLINE { Expr($1) }
 	| function_stmt { $1 }
-	| return_stmt { $1 }
+	| return_stmt NEWLINE { $1 }
+	| print_stmt NEWLINE { $1 }
 	| if_stmt { $1 }
 	| while_stmt { $1 }
 	| for_stmt { $1 }
-	| BREAK { Break }
-	| CONTINUE { Continue }
-
-indents:
-	INDENT { [Indent] }
-	| INDENT indents  { Indent :: $2 }
+	| BREAK NEWLINE { Break }
+	| CONTINUE NEWLINE { Continue }
 
 block:
-	block_stmt { Block($1) }
-
-block_stmt:
-	NEWLINE indents stmt { [($2, $3)] }
-	| NEWLINE indents stmt block_stmt { ($2, $3) :: $4 }
+	NEWLINE INDENT stmt_list DEDENT { $3 }
 
 function_stmt:
 	DEF ID LPAREN id_opt RPAREN COLON block { Function($2, $4, $7) }
@@ -87,15 +74,32 @@ return_stmt: RETURN expr { Return($2) }
 if_stmt:
 	IF expr COLON block { If($2, $4, []) }
 
-// elif_stmt:
-// 	ELIF expr COLON block { [Elif($2, $4)] }
-// 	| ELIF expr COLON block elif_stmt { Elif($2, $4) :: $5 }
+// elif_stmts:
+// 	indented_elif_stmts { $1 }
+// 	| unindented_elif_stmts { $1 }
+
+// indented_elif_stmt:
+// 	indents ELIF expr COLON block { ($1, $3, $5) }
+
+// unindented_elif_stmt:
+// 	ELIF expr COLON block { ([], $2, $4) }
+
+// indented_elif_stmts:
+// 	NEWLINE indented_elif_stmt { [$2] }
+// 	| NEWLINE indented_elif_stmt indented_elif_stmts { $2 :: $3 }
+
+// unindented_elif_stmts:
+// 	NEWLINE unindented_elif_stmt { [$2] }
+// 	| NEWLINE unindented_elif_stmt unindented_elif_stmts { $2 :: $3 }
 
 while_stmt:
 	WHILE expr COLON block { While($2, $4) }
 
 for_stmt:
 	FOR ID IN expr COLON block { For($2, $4, $6) }
+
+print_stmt:
+	PRINT LPAREN expr RPAREN { Print($3) }
 
 expr_opt:
 	/* nothing */ { [] }

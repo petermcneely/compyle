@@ -1,6 +1,4 @@
-hello = 2
-world = 4
-hello + world
-
-if world == 4:
-	return hello
+# this adds two integers
+def add(x, y):
+	return x + y
+print(add(x,y))

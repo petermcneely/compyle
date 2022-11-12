@@ -1,0 +1,85 @@
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+newline
+tabbing
+done tabbing
+tokenizing the newline
+stack top: 0
+indenting
+stack top: 1
+jumping into code
+return
+stack top: 1
+jumping into code
+stack top: 1
+jumping into code
+stack top: 1
+jumping into code
+stack top: 1
+jumping into code
+stack top: 1
+jumping into code
+stack top: 1
+jumping into code
+stack top: 1
+jumping into code
+newline
+done tabbing
+tokenizing the newline
+stack top: 1
+dedenting
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+stack top: 0
+jumping into code
+newline
+done tabbing
+tokenizing the newline
+stack top: 0
+jumping into code
+
+
+Parsed Program: 
+
+def add(x, y):
+return x + y
+print(add(x, y))
+<EOF>
