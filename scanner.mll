@@ -123,10 +123,15 @@ and code manager = parse
 | "continue"                                                { CONTINUE }
 | "break"                                                   { BREAK }
 | "def"                                                     { DEF }
+| "->"                                                      { ARROW }
 | "return"                                                  { RETURN }
 | "print"                                                   { PRINT }
 | "True"                                                    { BOOL_LITERAL(true) }
 | "False"                                                   { BOOL_LITERAL(false) }
+| "int"                                                     { INT }
+| "bool"                                                    { BOOL }
+| "float"                                                   { FLOAT }
+| "string"                                                  { STRING }
 | ['a'-'z' '_']['a'-'z' 'A'-'Z' '0'-'9' '-' '_']* as lexeme { ID(lexeme) }
 | digit+ as i                                               { INT_LITERAL(int_of_string i) } 
 | float as f                                                { FLOAT_LITERAL(float_of_string f)}

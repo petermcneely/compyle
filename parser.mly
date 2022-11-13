@@ -6,7 +6,7 @@ open Ast
 
 %token COMMA COLON NEWLINE PERIOD
 %token INDENT DEDENT
-%token DEF RETURN PRINT
+%token DEF RETURN PRINT ARROW
 %token LPAREN RPAREN LBRACKET RBRACKET
 %token IF ELIF ELSE WHILE FOR IN
 %token BREAK CONTINUE
@@ -14,6 +14,7 @@ open Ast
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN EXP_ASSIGN FDIV_ASSIGN
 %token EQ NEQ GT LT GEQ LEQ
 %token AND OR NOT
+%token INT BOOL FLOAT STRING
 %token <int> INT_LITERAL
 %token <float> FLOAT_LITERAL
 %token <string> STRING_LITERAL
@@ -60,15 +61,18 @@ block:
 	NEWLINE INDENT stmt_list DEDENT { $3 }
 
 function_stmt:
-	DEF ID LPAREN id_opt RPAREN COLON block { Function($2, $4, $7) }
+	DEF ID LPAREN formals_opt RPAREN ARROW typ COLON block { Function($2, $4, $7, $9) }
 
-id_opt:
+vdecl:
+	ID COLON typ { ($1, $3) }
+
+formals_opt:
 	/* nothing */ { [] }
-	| id_list { $1 }
+	| formals_list { $1 }
 
-id_list:
-	| ID { [Id($1)] }
-	| ID COMMA id_list { Id($1) :: $3 }
+formals_list:
+	| vdecl { [$1] }
+	| vdecl COMMA formals_list { $1 :: $3 }
 
 return_stmt: RETURN expr { Return($2) }
 
@@ -115,7 +119,6 @@ expr:
 	| FLOAT_LITERAL { FloatLit($1) }
 	| STRING_LITERAL { StringLit($1) }
 	| BOOL_LITERAL { BoolLit($1) }
-	| ID { Id($1) }
 	| LBRACKET expr_opt RBRACKET { ArrayLit($2) }
 	| LPAREN expr_opt RPAREN { TupleLit($2) }
 	| expr PLUS expr         { Binop($1, Add, $3)  }
@@ -125,7 +128,9 @@ expr:
 	| expr MODULO expr       { Binop($1, Mod, $3)  }
 	| expr EXP expr          { Binop($1, Exp, $3)  }
 	| expr FDIVIDE expr      { Binop($1, FDiv, $3) }
-	| ID ASSIGN expr        { Asn($1, $3) }
+	| ID { Id($1) }
+	| ID COLON typ ASSIGN expr { DeclAsn($1, $3, $5) }
+	| ID ASSIGN expr { Asn($1, $3) }
 	| ID PLUS_ASSIGN expr   { AugAsn($1, AAAdd, $3) }
 	| ID MINUS_ASSIGN expr  { AugAsn($1, AASub, $3)  }
 	| ID TIMES_ASSIGN expr  { AugAsn($1, AAMult, $3) }
@@ -133,6 +138,7 @@ expr:
 	| ID MOD_ASSIGN expr    { AugAsn($1, AAMod, $3)  }
 	| ID EXP_ASSIGN expr    { AugAsn($1, AAExp, $3)  }
 	| ID FDIV_ASSIGN expr   { AugAsn($1, AAFDiv, $3) }
+	| ID LPAREN args_opt RPAREN { Call($1, $3) }
 	| expr EQ expr     { Binop($1, Eq, $3)  }
 	| expr NEQ expr    { Binop($1, Neq, $3) }
 	| expr GT expr     { Binop($1, Gt, $3)  }
@@ -144,7 +150,12 @@ expr:
 	| NOT expr        { Not($2)      }
 	| expr IN expr { In($1, $3) }
 	| expr NOT IN expr { NotIn($1, $4) }
-	| ID LPAREN args_opt RPAREN { Call($1, $3) }
+
+typ:
+	INT { Int }
+	| BOOL { Bool }
+	| FLOAT { Float }
+	| STRING { String }
 
 args_opt:
   /* nothing */ { [] }

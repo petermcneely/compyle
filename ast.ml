@@ -1,3 +1,5 @@
+type typ = Int | Bool | Float | String
+
 type aug_op =
     AAAdd
   | AASub
@@ -29,10 +31,11 @@ type expr =
   | FloatLit of float
   | StringLit of string
   | BoolLit of bool
-  | Id of string
   | ArrayLit of expr list
   | TupleLit of expr list
   | Binop of expr * bin_op * expr
+  | Id of string
+  | DeclAsn of string * typ * expr
   | Asn of string * expr
   | AugAsn of string * aug_op * expr
   | Not of expr
@@ -40,11 +43,13 @@ type expr =
   | NotIn of expr * expr
   | Call of string * expr list
 
+type formal = string * typ
+
 type stmt =
     Break
   | Continue
   | Expr of expr
-  | Function of string * expr list * stmt list
+  | Function of string * formal list * typ * stmt list
   | Return of expr
   | If of expr * stmt list * elif list
   | While of expr * stmt list
@@ -81,6 +86,15 @@ let string_of_bin_op = function
   | Geq -> ">="
   | Leq -> "<="
 
+let string_of_typ = function
+    Int -> "int"
+  | Bool -> "bool"
+  | Float -> "float"
+  | String -> "string"
+
+let string_of_formals f list =
+  String.concat ", " (List.map (fun x -> fst x ^ ": " ^ string_of_typ (snd x)) f)
+
 let rec string_of_expr = function
     IntLit i -> string_of_int i
   | FloatLit f -> string_of_float f
@@ -90,6 +104,7 @@ let rec string_of_expr = function
   | ArrayLit l -> "[" ^ string_of_exprs l ^ "]"
   | TupleLit l -> "(" ^ string_of_exprs l ^ ")"
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bin_op op ^ " " ^ string_of_expr e2
+  | DeclAsn (v, t, e) -> v ^ ": " ^ string_of_typ t ^ " = " ^ string_of_expr e
   | Asn (v, e) -> v ^ " = " ^ string_of_expr e
   | AugAsn (v, op, e) -> v ^ " " ^ string_of_aug_op op ^ " " ^ string_of_expr e
   | Not e -> "not " ^ string_of_expr e
@@ -106,7 +121,7 @@ let rec string_of_stmt = function
     Break -> "break"
   | Continue -> "continue"
   | Expr e -> string_of_expr e
-  | Function (fname, args, block) -> "def " ^ fname ^ "(" ^ string_of_exprs args ^ "):" ^ string_of_block block
+  | Function (fname, formals, return_type, block) -> "def " ^ fname ^ "(" ^ string_of_formals formals formals ^ ") -> " ^ string_of_typ return_type ^ ":" ^ string_of_block block
   | Return e -> "return " ^ string_of_expr e
   | If (e, if_block, elif_blocks) -> "if " ^ string_of_expr e ^ ":" ^ string_of_block if_block ^ (String.concat "" (List.map string_of_elif_block elif_blocks))
   | While (e, block) -> "while " ^ string_of_expr e ^ ":" ^ string_of_block block
