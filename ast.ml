@@ -51,12 +51,11 @@ type stmt =
   | Expr of expr
   | Function of string * decl list * typ * stmt list
   | Return of expr
-  | If of expr * stmt list * elif list
+  | If of expr * stmt list * stmt list
   | While of expr * stmt list
   | For of string * expr * stmt list
   | Print of expr
   | Decl of string * typ
-and elif = expr * stmt list
 
 type program = stmt list
 
@@ -122,33 +121,29 @@ and string_of_exprs l =
     else ""
 
 let rec string_of_stmt = function
-    Break -> "break"
-  | Continue -> "continue"
-  | Expr e -> string_of_expr e
+    Break -> "break\n"
+  | Continue -> "continue\n"
+  | Expr e -> string_of_expr e ^ "\n"
   | Function (fname, formals, return_type, block) -> "def " ^ fname ^ "(" ^ string_of_formals formals formals ^ ") -> " ^ string_of_typ return_type ^ ":" ^ string_of_block block
-  | Return e -> "return " ^ string_of_expr e
-  | If (e, if_block, elif_blocks) -> "if " ^ string_of_expr e ^ ":" ^ string_of_block if_block ^ (String.concat "" (List.map string_of_elif_block elif_blocks))
+  | Return e -> "return " ^ string_of_expr e ^ "\n"
+  | If (e, if_block, elif_blocks) -> "if " ^ string_of_expr e ^ ":" ^ string_of_block if_block ^ string_of_elif_blocks elif_blocks
   | While (e, block) -> "while " ^ string_of_expr e ^ ":" ^ string_of_block block
   | For (v, e, b) -> "for " ^ v ^ " in " ^ string_of_expr e ^ ":" ^ string_of_block b
   | Print e -> "print(" ^ string_of_expr e ^ ")\n"
-  | Decl (id, typ) -> string_of_decl (id, typ)
+  | Decl (id, typ) -> string_of_decl (id, typ) ^ "\n"
 
-and string_of_elif_block elif =
-  let (expr, block) = elif in
-  "elif " ^ string_of_expr expr ^ ":" ^ string_of_block block
-
-and string_of_else_block stmt = "else: " ^ string_of_stmt stmt
+and string_of_elif_blocks elif_blocks =
+  String.concat "\n" (List.map (fun stmt -> "else:" ^ string_of_block [stmt]) elif_blocks)
 
 and string_of_block (l: stmt list): string =
-  if List.length l = 1 then "\n" ^ string_of_line (List.hd l)
-  else if List.length l > 1 then "\n" ^ string_of_line (List.hd l) ^ string_of_block (List.tl l)
+  if List.length l > 0 then "\n" ^ (String.concat "" (List.map string_of_stmt l))
   else ""
 
 and string_of_line (l: stmt): string =
   string_of_stmt l
 
 let string_of_program (p: stmt list): string =
-  (String.concat "\n" (List.map string_of_stmt p))
+  (String.concat "" (List.map string_of_stmt p))
 
 let pretty_string_of_program (p: stmt list): string =
   "\n\nParsed Program: \n\n" ^ string_of_program p ^ "<EOF>\n"

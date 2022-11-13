@@ -5,5 +5,14 @@ this adds two integers
 """
 	sum: int
 	sum = x + y
+	if x > y:
+		return sum
+	elif 1:
+		x += 1
+		return x + y
+	elif x < y:
+		return sum
+	else:
+		return x + y
 	return sum
 print(add(x,y))

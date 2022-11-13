@@ -78,25 +78,12 @@ formals_list:
 return_stmt: RETURN expr { Return($2) }
 
 if_stmt:
-	IF expr COLON block { If($2, $4, []) }
+	IF expr COLON block elif_stmts { If($2, $4, $5) }
 
-// elif_stmts:
-// 	indented_elif_stmts { $1 }
-// 	| unindented_elif_stmts { $1 }
-
-// indented_elif_stmt:
-// 	indents ELIF expr COLON block { ($1, $3, $5) }
-
-// unindented_elif_stmt:
-// 	ELIF expr COLON block { ([], $2, $4) }
-
-// indented_elif_stmts:
-// 	NEWLINE indented_elif_stmt { [$2] }
-// 	| NEWLINE indented_elif_stmt indented_elif_stmts { $2 :: $3 }
-
-// unindented_elif_stmts:
-// 	NEWLINE unindented_elif_stmt { [$2] }
-// 	| NEWLINE unindented_elif_stmt unindented_elif_stmts { $2 :: $3 }
+elif_stmts:
+	{ [] }
+	| ELIF expr COLON block elif_stmts { [If($2, $4, $5)] }
+	| ELSE COLON block { $3 }
 
 while_stmt:
 	WHILE expr COLON block { While($2, $4) }
