@@ -32,13 +32,15 @@ The actual test cases
 *)
 let test_case = "Scans, parses, and generates the ast for the hello world program" in
 let program = "\
-def add(x, y):\r\n\
+def add(x: int, y: int) -> int:\r\n\
 \"\"\"\r\n
 this adds two integers\r\n
 \"\"\"\r\n
-\treturn x + y\r\n
+\tsum: int\r\n
+\tsum = x + y\r\n
+\treturn sum\r\n
 print(add(x,y))\r\n" in
-let output = ["def add(x, y):"; "return x + y"; "print(add(x, y))"; "" ] in
+let output = ["def add(x: int, y: int) -> int:"; "sum: int"; "sum = x + y"; "return sum"; "print(add(x, y))"; "" ] in
 run_test ~debug:false test_case program output;
 
 let test_case = "Parses literals being added together" in

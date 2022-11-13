@@ -47,7 +47,8 @@ stmt_list:
 	| NEWLINE stmt stmt_list { $2 :: $3 }
 
 stmt:
-	expr NEWLINE { Expr($1) }
+	vdecl NEWLINE { Decl(fst $1, snd $1) }
+	| expr NEWLINE { Expr($1) }
 	| function_stmt { $1 }
 	| return_stmt NEWLINE { $1 }
 	| print_stmt NEWLINE { $1 }
@@ -129,7 +130,6 @@ expr:
 	| expr EXP expr          { Binop($1, Exp, $3)  }
 	| expr FDIVIDE expr      { Binop($1, FDiv, $3) }
 	| ID { Id($1) }
-	| ID COLON typ ASSIGN expr { DeclAsn($1, $3, $5) }
 	| ID ASSIGN expr { Asn($1, $3) }
 	| ID PLUS_ASSIGN expr   { AugAsn($1, AAAdd, $3) }
 	| ID MINUS_ASSIGN expr  { AugAsn($1, AASub, $3)  }

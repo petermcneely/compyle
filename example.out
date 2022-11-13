@@ -2,7 +2,9 @@
 
 Parsed Program: 
 
-def add(x, y):
-return x + y
+def add(x: int, y: int) -> int:
+sum: int
+sum = x + y
+return sum
 print(add(x, y))
 <EOF>

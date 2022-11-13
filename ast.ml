@@ -43,18 +43,19 @@ type expr =
   | NotIn of expr * expr
   | Call of string * expr list
 
-type formal = string * typ
+type decl = string * typ
 
 type stmt =
     Break
   | Continue
   | Expr of expr
-  | Function of string * formal list * typ * stmt list
+  | Function of string * decl list * typ * stmt list
   | Return of expr
   | If of expr * stmt list * elif list
   | While of expr * stmt list
   | For of string * expr * stmt list
   | Print of expr
+  | Decl of string * typ
 and elif = expr * stmt list
 
 type program = stmt list
@@ -92,8 +93,11 @@ let string_of_typ = function
   | Float -> "float"
   | String -> "string"
 
+let string_of_decl (d: string * typ): string =
+  fst d ^ ": " ^ string_of_typ (snd d)
+
 let string_of_formals f list =
-  String.concat ", " (List.map (fun x -> fst x ^ ": " ^ string_of_typ (snd x)) f)
+  String.concat ", " (List.map (fun x -> string_of_decl x) f)
 
 let rec string_of_expr = function
     IntLit i -> string_of_int i
@@ -127,6 +131,7 @@ let rec string_of_stmt = function
   | While (e, block) -> "while " ^ string_of_expr e ^ ":" ^ string_of_block block
   | For (v, e, b) -> "for " ^ v ^ " in " ^ string_of_expr e ^ ":" ^ string_of_block b
   | Print e -> "print(" ^ string_of_expr e ^ ")\n"
+  | Decl (id, typ) -> string_of_decl (id, typ)
 
 and string_of_elif_block elif =
   let (expr, block) = elif in
