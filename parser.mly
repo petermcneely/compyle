@@ -43,6 +43,7 @@ program: stmt_list EOF { $1 }
 stmt_list:
 	| { [] }
 	| stmt stmt_list { $1 :: $2 }
+	| NEWLINE stmt stmt_list { $2 :: $3 }
 
 stmt:
 	expr NEWLINE { Expr($1) }

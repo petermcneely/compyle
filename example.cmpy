@@ -1,4 +1,7 @@
-# this adds two integers
+
 def add(x, y):
+"""
+this adds two integers
+"""
 	return x + y
 print(add(x,y))

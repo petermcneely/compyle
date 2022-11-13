@@ -3,7 +3,16 @@
 (* header section *)
 {
   open Parser
+  open Lexing
   open Lexing_stack
+
+  let print_position position =
+    print_string ("position: {\n");
+    print_string ("\tpos_fname: " ^ position.pos_fname ^ "\n");
+    print_string ("\tpos_lnum: " ^ string_of_int position.pos_lnum ^ "\n");
+    print_string ("\tpos_bol: " ^ string_of_int position.pos_bol ^ "\n");
+    print_string ("\tpos_cnum: " ^ string_of_int position.pos_cnum ^ "\n");
+    print_string ("}\n")
 }
 
 (*
@@ -15,6 +24,8 @@ let e = ['e' 'E']
 let sign = ['+' '-']
 let exponent = (e(sign)?digit+)
 let float = (digit+('.'))|(digit+('.')digit+) | ((digit)exponent)|(digit*('.')digit+exponent?)
+let newline = ('\n'|"\r\n")
+let multi_line_comment = "\"\"\""
 
 (*
   entrypoint (token):
@@ -36,38 +47,38 @@ let float = (digit+('.'))|(digit+('.')digit+) | ((digit)exponent)|(digit*('.')di
 rule token manager = parse
   (* an empty string will get evaluated every time *)
   "" {
-    let top = Stack.top manager.stack in
-    print_string "stack top: "; print_int top; print_newline();
     let top_of_stack = Stack.top manager.stack in
     let curr_indentation = manager.curr_indentation in
     if curr_indentation > top_of_stack then (
-      print_string "indenting\n";
       Stack.push curr_indentation manager.stack;
       INDENT
     )
     else if curr_indentation < top_of_stack then (
-      print_string "dedenting\n";
       (* ignore the warning since calling this is intentional *)
       ignore (Stack.pop manager.stack);
       DEDENT
     )
     else (
-      print_string "jumping into code\n";
       code manager lexbuf
     )
   }
 
 and code manager = parse
 | [' ']     { token manager lexbuf }
-| "\"\"\""  { print_string "multi line comment!\n"; multi_comment manager lexbuf }
+| newline? multi_line_comment  { multi_comment manager lexbuf }
 | '#'       { single_comment manager lexbuf }
 
-| ('\n'|"\r\n")  {
-  print_string "newline"; print_newline();
+| (newline | ' ' | '\t')* newline {
+  (*
+    From the LRM: A logical line that contains only spaces, tabs, formfeeds and possibly a comment,
+    is ignored (i.e., no NEWLINE token is generated).
+    
+    So, since there could be multiple, white space only lines
+    in a row, we want to generate one token on the line that is not ignored and skip the rest.
+  *)
   manager.curr_indentation <- 0;
   (* ignore the warning since calling this is intentional *)
   ignore (tab manager lexbuf);
-  print_string "tokenizing the newline\n";
   NEWLINE
 }
 
@@ -112,7 +123,7 @@ and code manager = parse
 | "continue"                                                { CONTINUE }
 | "break"                                                   { BREAK }
 | "def"                                                     { DEF }
-| "return"                                                  { print_string "return\n"; RETURN }
+| "return"                                                  { RETURN }
 | "print"                                                   { PRINT }
 | "True"                                                    { BOOL_LITERAL(true) }
 | "False"                                                   { BOOL_LITERAL(false) }
@@ -124,17 +135,16 @@ and code manager = parse
 | _ as ch                                                   { raise (Failure("illegal character " ^ Char.escaped ch)) }
 
 and tab manager = parse
-  ""     { print_string "done tabbing\n"; }
+  ""     { (* do nothing; when we no longer have a tab, this will force us to go back to the newline token *) }
   | '\t' {
-    print_string "tabbing\n";
     manager.curr_indentation <- manager.curr_indentation + 1;
     tab manager lexbuf
   }
 
 and multi_comment manager = parse
-| "\"\"\"" {print_string "ending multi lin comment\n"; token manager lexbuf }
-| _        { multi_comment manager lexbuf }
+| multi_line_comment { token manager lexbuf }
+| _                  { multi_comment manager lexbuf }
 
 and single_comment manager = parse
-| "\n" { token manager lexbuf }
+| newline { token manager lexbuf }
 | _    { single_comment manager lexbuf }

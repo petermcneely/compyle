@@ -128,4 +128,7 @@ and string_of_line (l: stmt): string =
   string_of_stmt l
 
 let string_of_program (p: stmt list): string =
-  "\n\nParsed Program: \n\n" ^ (String.concat "\n" (List.map string_of_stmt p)) ^ "<EOF>\n"
+  (String.concat "\n" (List.map string_of_stmt p))
+
+let pretty_string_of_program (p: stmt list): string =
+  "\n\nParsed Program: \n\n" ^ string_of_program p ^ "<EOF>\n"
