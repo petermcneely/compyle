@@ -35,7 +35,6 @@ type expr =
   | TupleLit of expr list
   | Binop of expr * bin_op * expr
   | Id of string
-  | DeclAsn of string * typ * expr
   | Asn of string * expr
   | AugAsn of string * aug_op * expr
   | Not of expr
@@ -107,7 +106,6 @@ let rec string_of_expr = function
   | ArrayLit l -> "[" ^ string_of_exprs l ^ "]"
   | TupleLit l -> "(" ^ string_of_exprs l ^ ")"
   | Binop (e1, op, e2) -> string_of_expr e1 ^ " " ^ string_of_bin_op op ^ " " ^ string_of_expr e2
-  | DeclAsn (v, t, e) -> v ^ ": " ^ string_of_typ t ^ " = " ^ string_of_expr e
   | Asn (v, e) -> v ^ " = " ^ string_of_expr e
   | AugAsn (v, op, e) -> v ^ " " ^ string_of_aug_op op ^ " " ^ string_of_expr e
   | Not e -> "not " ^ string_of_expr e
