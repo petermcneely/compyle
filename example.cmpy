@@ -1,8 +1,18 @@
-"""
-This is an example program in compyle
-"""
 
-hello = 22
-world = 20 # this comment should get ignored
-
-return hello + world
+def add(x: int, y: int) -> int:
+"""
+this adds two integers
+"""
+	sum: int
+	sum = x + y
+	if x > y:
+		return sum
+	elif 1:
+		x += 1
+		return x + y
+	elif x < y:
+		return sum
+	else:
+		return x + y
+	return sum
+print(add(x,y))

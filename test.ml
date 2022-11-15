@@ -8,18 +8,23 @@ let count_tests = ref 0;;
 
 let parse_program (input: string) =
   let lexbuf = Lexing.from_string input in
-  Parser.program Scanner.token lexbuf in
+  let indentation_manager = Lexing_stack.create_indentation_manager() in
+  let ast = Parser.program (Scanner.token indentation_manager) lexbuf in
+  Ast.string_of_program ast in
 
 let pass_test () =
   passed_tests := (!passed_tests + 1);
   print_endline "\tYAY" in
 
-let run_test ?(debug: bool = false) (test_case: string) (input: string) (output: string list): unit =
+let run_test ?(debug: bool = false) (test_case: string) (input: string) (expected: string list): unit =
   print_endline (test_case ^ ":");
   count_tests := (!count_tests + 1);
   let parsed_program = parse_program input in
-  if debug then print_endline (string_of_program parsed_program);
-  if List.equal (fun x y -> if debug then print_endline ("x: " ^ x ^ "y: " ^ y); x = y) parsed_program output then
+  if debug then print_endline ("parsed_program:\n" ^ parsed_program);
+  let program_lines = String.split_on_char '\n' parsed_program in
+  if debug then (print_endline ("parsed_program line count: " ^ string_of_int (List.length program_lines)));
+  if debug then (print_endline ("expected line count: " ^ string_of_int (List.length expected)));
+  if List.equal (fun x y -> if debug then print_endline ("x: " ^ x ^ " | y: " ^ y); x = y) program_lines expected then
     pass_test()
   else
     print_endline("\tOOPS") in
@@ -27,33 +32,31 @@ let run_test ?(debug: bool = false) (test_case: string) (input: string) (output:
 (*
 The actual test cases   
 *)
+let test_case = "Scans, parses, and generates the ast for the hello world program" in
+let program = "\
+def add(x: int, y: int) -> int:\r\n\
+\"\"\"\r\n
+this adds two integers\r\n
+\"\"\"\r\n
+\tsum: int\r\n
+\tsum = x + y\r\n
+\treturn sum\r\n
+print(add(x,y))\r\n" in
+let expected = ["def add(x: int, y: int) -> int:"; "sum: int"; "sum = x + y"; "return sum"; "print(add(x, y))"; "" ] in
+run_test ~debug:false test_case program expected;
+
 let test_case = "Parses literals being added together" in
 let addition = "3 + 5" in
-let output = ["LITERAL: 3";"PLUS";"LITERAL: 5"] in
-run_test test_case addition output;
+let expected = [addition; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
 
 (*
 Tests basic logical operators   
 *)
 let test_case = "Parses literals being compared" in
 let comparing = "8 > 5 and 3 < 9" in
-let output = ["LITERAL: 8";"GT";"LITERAL: 5";"AND";"LITERAL: 3";"LT";"LITERAL: 9"] in
-run_test test_case comparing output;
-
-let test_case = "Parses literals being compared" in
-let comparing = "8 >= 5 or 3 <= 9" in
-let output = ["LITERAL: 8";"GEQ";"LITERAL: 5";"OR";"LITERAL: 3";"LEQ";"LITERAL: 9"] in
-run_test test_case comparing output;
-
-let test_case = "Parses literals being compared" in
-let comparing = "8 == 5 and 3 != 9" in
-let output = ["LITERAL: 8";"EQ";"LITERAL: 5";"AND";"LITERAL: 3";"NEQ";"LITERAL: 9"] in
-run_test test_case comparing output;
-
-let test_case = "Parses not operator" in
-let comparing = "not x" in
-let output = ["NOT";"ID: x";] in
-run_test test_case comparing output;
+let expected = [comparing; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 (*
 Boiler plate set up for processing the results of the tests   
