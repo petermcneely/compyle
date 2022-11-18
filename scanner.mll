@@ -26,6 +26,12 @@ let exponent = (e(sign)?digit+)
 let float = (digit+('.'))|(digit+('.')digit+) | ((digit)exponent)|(digit*('.')digit+exponent?)
 let newline = ('\n'|"\r\n")
 let multi_line_comment = "\"\"\""
+let almost_ascii = [
+  '!' '#' '$' '%' '&' '\'' '(' ')' '*' '+' ',' '-' '.'
+  '/' '0'-'9' ':' ';' '<' '=' '>' '?' '@' 'A'-'Z' '['
+  '\\' ']' '^' '_' '`' 'a'-'z' '{' '|' '}' '~'
+]
+let lexeme = ['a'-'z' '_']['a'-'z' 'A'-'Z' '0'-'9' '-' '_']*
 
 (*
   entrypoint (token):
@@ -132,10 +138,10 @@ and code manager = parse
 | "bool"                                                    { BOOL }
 | "float"                                                   { FLOAT }
 | "string"                                                  { STRING }
-| ['a'-'z' '_']['a'-'z' 'A'-'Z' '0'-'9' '-' '_']* as lexeme { ID(lexeme) }
+| lexeme as l                                               { ID(l) }
 | digit+ as i                                               { INT_LITERAL(int_of_string i) } 
 | float as f                                                { FLOAT_LITERAL(float_of_string f)}
-| (("\'.*\'") | ("\".*\"")) as s                            { STRING_LITERAL(s) }
+| "\"" almost_ascii* "\"" as s                              { STRING_LITERAL(s) }
 | eof                                                       { EOF }
 | _ as ch                                                   { raise (Failure("illegal character " ^ Char.escaped ch)) }
 
@@ -147,9 +153,9 @@ and tab manager = parse
   }
 
 and multi_comment manager = parse
-| multi_line_comment { token manager lexbuf }
-| _                  { multi_comment manager lexbuf }
+  | multi_line_comment { token manager lexbuf }
+  | _                  { multi_comment manager lexbuf }
 
 and single_comment manager = parse
-| newline { token manager lexbuf }
-| _    { single_comment manager lexbuf }
+  | newline { token manager lexbuf }
+  | _    { single_comment manager lexbuf }
