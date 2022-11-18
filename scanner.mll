@@ -134,6 +134,16 @@ and code manager = parse
 | "print"                                                   { PRINT }
 | "True"                                                    { BOOL_LITERAL(true) }
 | "False"                                                   { BOOL_LITERAL(false) }
+| "tuple"                                                   { TUPLE }
+| ("string" | "int" | "float" | "bool") "[]" as a {
+  let get_array_token = function
+      "int[]" -> INT_ARRAY
+    | "string[]" -> STRING_ARRAY
+    | "float[]" -> FLOAT_ARRAY
+    | "bool[]" -> BOOL_ARRAY
+    | _ -> raise (Failure "Scanning error. Scanning an unsupported array type")
+  in get_array_token(a)
+}
 | "int"                                                     { INT }
 | "bool"                                                    { BOOL }
 | "float"                                                   { FLOAT }

@@ -63,6 +63,16 @@ let comparing = "\"hello world\"" in
 let expected = [comparing; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
+let test_case = "Parses tuples" in
+let comparing = "x: tuple\nx = (1, \"hello world\", true)" in
+let expected = ["x: tuple"; "x = (1, \"hello world\", true)"; ""] in
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses arrays" in
+let comparing = "x: int[]\nx = [1, 2, 3, 4, 5]" in
+let expected = ["x: int[]"; "x = [1, 2, 3, 4, 5]"; ""] in
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)
