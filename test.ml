@@ -58,6 +58,11 @@ let comparing = "8 > 5 and 3 < 9" in
 let expected = [comparing; ""] in 
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
+let test_case = "Parses string literals" in
+let comparing = "\"hello world\"" in
+let expected = [comparing; ""] in
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)
