@@ -133,7 +133,12 @@ let rec check (program : program) : sprogram =
         let t, e' = check_expr e in
         if t = Bool then (t, SNot (t, e'))
         else raise (Failure "Expect boolean expression")
-    | NotIn (e1, e2) -> raise (Failure "Not implemented")
+    | NotIn (e1, e2) ->
+        let t1, e1' = check_expr e1 and t2, e2' = check_expr e2 in
+        if t2 = Int || t2 = Bool || t2 = Float || t2 = String then
+          raise (Failure "Expects iterables")
+          (* todo: check type of e1 matches with type of array type *)
+        else (Bool, SNotIn ((t1, e1'), (t2, e2')))
     | Call (id, f_block) -> raise (Failure "Not implemented")
     | _ -> raise (Failure "Semantically invalid expression")
   in
@@ -154,7 +159,16 @@ let rec check (program : program) : sprogram =
         let t, e' = check_expr e and s_while_block = check while_block in
         if t = Bool then SWhile ((t, e'), s_while_block)
         else raise (Failure "Expect boolean expression")
-    | For (id, e, for_block) -> raise (Failure "Not implemented")
+    | For (id, e, for_block) ->
+        let t, e' = check_expr e in
+        let s_stmt =
+          match t with
+          | Array array_elem_typ ->
+              Hashtbl.add var_decls id array_elem_typ;
+              SFor (id, (t, e'), check for_block)
+          | _ -> raise (Failure "Expect Array")
+        in
+        s_stmt
     | Print e -> SPrint (check_expr e)
     | Decl (id, t) ->
         Hashtbl.add var_decls id t;
