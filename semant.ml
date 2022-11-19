@@ -124,11 +124,11 @@ let rec check (program : program) : sprogram =
     | Asn (var, e) ->
         let t = find_var_type var and t', e' = check_expr e in
         if t = t' then (t, SAsn (var, (t', e')))
-        else raise (Failure ("Unbound variable " ^ var))
+        else raise (Failure "Imcompatible type")
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type var and t2, e' = check_expr e in
         if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
-        else raise (Failure ("Unbound variable " ^ var))
+        else raise (Failure "Imcompatible type")
     | Not e ->
         let t, e' = check_expr e in
         if t = Bool then (t, SNot (t, e'))
