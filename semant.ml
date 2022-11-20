@@ -3,7 +3,7 @@ open Sast
 module StringMap = Map.Make (String)
 
 (* Added defs below from ast.ml for VSCode syntax checking *)
-type typ = Int | Bool | Float | String | Tuple | Array of typ
+type typ = Int | Bool | Float | String | Tuple | Array of typ | EmptyArray
 type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp | AAFDiv
 
 type bin_op =
@@ -93,15 +93,65 @@ type sprogram = sstmt list
 let rec check (program : program) : sprogram =
   (* in-place mutation *)
   let var_decls = Hashtbl.create 100 in
-  let add_var ((id : string), (t : typ)) =
+  let func_decls = Hashtbl.create 100 in
+  let name_defined_in_vars (id : string) : bool =
     try
       let _ = Hashtbl.find var_decls id in
-      raise (Failure ("Duplicate variable " ^ id))
+      true
+    with Not_found -> false
+  in
+  let add_func (fd : stmt) =
+    match fd with
+    | Function (fname, _, _, _) -> (
+        if name_defined_in_vars fname then
+          raise (Failure (fname ^ " already declared as variables"))
+        else
+          try
+            let _ = Hashtbl.find func_decls fname in
+            raise (Failure ("Duplicate function " ^ fname))
+          with Not_found -> Hashtbl.add func_decls fname fd)
+    | _ -> raise (Failure "Expect function")
+  in
+  let find_func (fname : string) : stmt =
+    try Hashtbl.find func_decls fname
+    with Not_found -> raise (Failure ("Unbound function " ^ fname))
+  in
+  let name_defined_in_funcs (fname : string) : bool =
+    try
+      let _ = Hashtbl.find func_decls fname in
+      true
+    with Not_found -> false
+  in
+  let add_var ((id : string), (t : typ)) =
+    try
+      if name_defined_in_funcs id then
+        raise (Failure (id ^ "already declared as function"))
+      else
+        let _ = Hashtbl.find var_decls id in
+        raise (Failure ("Duplicate variable " ^ id))
     with Not_found -> Hashtbl.add var_decls id t
   in
   let find_var_type (id : string) : typ =
     try Hashtbl.find var_decls id
     with Not_found -> raise (Failure ("Unbound variable " ^ id))
+  in
+  let rec array_has_same_elems (l : sexpr list) =
+    match l with
+    | [] -> ()
+    | (t1, _) :: (t2, _) :: _ when t1 != t2 ->
+        raise
+          (Failure
+             ("found array of mixed types (" ^ string_of_typ t1 ^ ", and "
+            ^ string_of_typ t2))
+    | _ :: t -> array_has_same_elems t
+  in
+  let args_has_same_type ((params : decl list), (args : sexpr list)) : bool =
+    List.fold_left2
+      (fun result param arg ->
+        match (param, arg) with
+        | (_, t1), (t2, _) when t1 = t2 -> true
+        | _ -> false)
+      true params args
   in
   let rec check_expr (e : expr) : sexpr =
     match e with
@@ -109,7 +159,18 @@ let rec check (program : program) : sprogram =
     | FloatLit f -> (Float, SFloatLit f)
     | StringLit s -> (String, SStringLit s)
     | BoolLit b -> (Bool, SBoolLit b)
-    | ArrayLit a -> raise (Failure "Not implemented")
+    | ArrayLit a ->
+        let s_el = List.map check_expr a in
+        let s_stmt =
+          match s_el with
+          | [] -> (EmptyArray, SArrayLit s_el)
+          | _ ->
+              let _ = array_has_same_elems s_el in
+              let head = List.hd s_el in
+              let head_type, _ = head in
+              (head_type, SArrayLit s_el)
+        in
+        s_stmt
     | TupleLit t -> (Tuple, STupleLit (List.map check_expr t))
     | Binop (e1, bin_op, e2) ->
         let t1, e1' = check_expr e1 and t2, e2' = check_expr e2 in
@@ -141,19 +202,36 @@ let rec check (program : program) : sprogram =
         else raise (Failure "Expect boolean expression")
     | NotIn (e1, e2) ->
         let t1, e1' = check_expr e1 and t2, e2' = check_expr e2 in
-        if t2 = Int || t2 = Bool || t2 = Float || t2 = String then
-          raise (Failure "Expects iterables")
-          (* todo: check type of e1 matches with type of array type *)
-        else (Bool, SNotIn ((t1, e1'), (t2, e2')))
-    | Call (id, f_block) -> raise (Failure "Not implemented")
+        let sexpr =
+          match t2 with
+          | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
+          | Array elem_typ when elem_typ = t1 ->
+              (Bool, SNotIn ((t1, e1'), (t2, e2')))
+          | _ -> raise (Failure "Expect iterables")
+        in
+        sexpr
+    | Call (called_fname, args) ->
+        let s_stmt =
+          match find_func called_fname with
+          | Function (fname, params, frtyp, fbody) ->
+              let s_args = List.map check_expr args in
+              if args_has_same_type (params, s_args) then
+                (frtyp, SCall (fname, s_args))
+              else raise (Failure "Incompatible argument types")
+          | _ -> raise (Failure "Expect function")
+        in
+        s_stmt
     | _ -> raise (Failure "Semantically invalid expression")
   in
-  let check_stmt (stmt : stmt) : sstmt =
+  let rec check_stmt (stmt : stmt) : sstmt =
     match stmt with
     | Break -> SBreak
     | Continue -> SContinue
     | Expr e -> SExpr (check_expr e)
-    | Function (fname, args, t, f_block) -> raise (Failure "Not implemented")
+    | Function (fname, params, rtyp, fbody) ->
+        add_func (Function (fname, params, rtyp, fbody));
+        let s_fbody = List.map check_stmt fbody in
+        SFunction (fname, params, rtyp, s_fbody)
     | Return e -> SReturn (check_expr e)
     | If (e, if_block, else_block) ->
         let t, e' = check_expr e

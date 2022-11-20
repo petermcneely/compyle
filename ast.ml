@@ -1,4 +1,4 @@
-type typ = Int | Bool | Float | String | Tuple | Array of typ
+type typ = Int | Bool | Float | String | Tuple | Array of typ | EmptyArray
 type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp | AAFDiv
 
 type bin_op =
@@ -84,6 +84,7 @@ let rec string_of_typ = function
   | String -> "string"
   | Tuple -> "tuple"
   | Array t -> string_of_typ t ^ "[]"
+  | EmptyArray -> "[]"
 
 let string_of_decl (d : string * typ) : string =
   fst d ^ ": " ^ string_of_typ (snd d)
