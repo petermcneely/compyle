@@ -93,6 +93,12 @@ type sprogram = sstmt list
 let rec check (program : program) : sprogram =
   (* in-place mutation *)
   let var_decls = Hashtbl.create 100 in
+  let add_var ((id : string), (t : typ)) =
+    try
+      let _ = Hashtbl.find var_decls id in
+      raise (Failure ("Duplicate variable " ^ id))
+    with Not_found -> Hashtbl.add var_decls id t
+  in
   let find_var_type (id : string) : typ =
     try Hashtbl.find var_decls id
     with Not_found -> raise (Failure ("Unbound variable " ^ id))
@@ -164,15 +170,14 @@ let rec check (program : program) : sprogram =
         let s_stmt =
           match t with
           | Array array_elem_typ ->
-              Hashtbl.add var_decls id array_elem_typ;
+              add_var (id, array_elem_typ);
               SFor (id, (t, e'), check for_block)
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
     | Print e -> SPrint (check_expr e)
     | Decl (id, t) ->
-        Hashtbl.add var_decls id t;
-        (* decls can be overwritten and created at any point *)
+        add_var (id, t);
         SDecl (id, t)
   in
   List.map check_stmt program
