@@ -100,7 +100,7 @@ let rec string_of_expr = function
   | IntLit i -> string_of_int i
   | FloatLit f -> string_of_float f
   | StringLit s -> s
-  | BoolLit b -> string_of_bool b
+  | BoolLit b -> if b then "True" else "False"
   | Id s -> s
   | ArrayLit l -> "[" ^ string_of_exprs l ^ "]"
   | TupleLit l -> "(" ^ string_of_exprs l ^ ")"
