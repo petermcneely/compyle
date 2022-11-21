@@ -195,7 +195,7 @@ let rec check (program : program) : sprogram =
           | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
           | Array elem_typ when elem_typ = t1 ->
               (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array elem_typ when elem_typ = t1 ->
+          | Array elem_typ when elem_typ != t1 ->
               raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
