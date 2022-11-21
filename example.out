@@ -3,19 +3,6 @@
 Parsed Program: 
 
 def add(x: int, y: int) -> int:
-sum: int
-sum = x + y
-if x > y:
-return sum
-else:
-if 1:
-x += 1
-return x + y
-else:
-if x < y:
-return sum
-else:
-return x + y
-return sum
-print(add(x, y))
+return (int : (int : x) + (int : y))
+print((int : add((int : 1), (int : 2))))
 <EOF>

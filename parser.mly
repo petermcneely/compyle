@@ -20,7 +20,11 @@ open Ast
 %token <string> STRING_LITERAL
 %token <string> ID
 %token <bool> BOOL_LITERAL
-%token STRING_ARRAY INT_ARRAY FLOAT_ARRAY BOOL_ARRAY TUPLE
+%token <int> STRING_ARRAY
+%token <int> INT_ARRAY
+%token <int> FLOAT_ARRAY
+%token <int> BOOL_ARRAY
+%token TUPLE
 %token EOF
 
 %start program
@@ -145,10 +149,10 @@ typ:
 	| FLOAT { Float }
 	| STRING { String }
 	| TUPLE { Tuple }
-	| STRING_ARRAY { Array(String) }
-	| INT_ARRAY { Array(Int) }
-	| FLOAT_ARRAY { Array(Float) }
-	| BOOL_ARRAY { Array(Bool) }
+	| STRING_ARRAY { Array(String, $1) }
+	| INT_ARRAY { Array(Int, $1) }
+	| FLOAT_ARRAY { Array(Float, $1) }
+	| BOOL_ARRAY { Array(Bool, $1) }
 
 args_opt:
   /* nothing */ { [] }

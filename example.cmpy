@@ -1,18 +1,6 @@
-
 def add(x: int, y: int) -> int:
 """
-this adds two integers
+This method adds two integers together
 """
-	sum: int
-	sum = x + y
-	if x > y:
-		return sum
-	elif 1:
-		x += 1
-		return x + y
-	elif x < y:
-		return sum
-	else:
-		return x + y
-	return sum
-print(add(x,y))
+	return x + y
+print(add(1, 2))
