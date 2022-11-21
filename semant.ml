@@ -2,125 +2,44 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 
-(* Added defs below from ast.ml for VSCode syntax checking *)
-type typ = Int | Bool | Float | String | Tuple | Array of typ | EmptyArray
-type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp | AAFDiv
-
-type bin_op =
-  | Add
-  | Sub
-  | Mult
-  | Div
-  | Mod
-  | Exp
-  | FDiv
-  | And
-  | Or
-  | Eq
-  | Neq
-  | Gt
-  | Lt
-  | Geq
-  | Leq
-
-type expr =
-  | IntLit of int
-  | FloatLit of float
-  | StringLit of string
-  | BoolLit of bool
-  | ArrayLit of expr list
-  | TupleLit of expr list
-  | Binop of expr * bin_op * expr
-  | Id of string
-  | Asn of string * expr
-  | AugAsn of string * aug_op * expr
-  | Not of expr
-  | In of expr * expr
-  | NotIn of expr * expr
-  | Call of string * expr list
-
-type decl = string * typ
-
-type stmt =
-  | Break
-  | Continue
-  | Expr of expr
-  | Function of string * decl list * typ * stmt list
-  | Return of expr
-  | If of expr * stmt list * stmt list
-  | While of expr * stmt list
-  | For of string * expr * stmt list
-  | Print of expr
-  | Decl of string * typ
-
-type program = stmt list
-(* Added defs above from ast.ml for VSCode syntax checking *)
-
-(* Added defs below from sast.ml for VSCode syntax checking *)
-type sexpr = typ * sx
-
-and sx =
-  | SIntLit of int
-  | SFloatLit of float
-  | SStringLit of string
-  | SBoolLit of bool
-  | SArrayLit of sexpr list
-  | STupleLit of sexpr list
-  | SBinop of sexpr * bin_op * sexpr
-  | SId of string
-  | SAsn of string * sexpr
-  | SAugAsn of string * aug_op * sexpr
-  | SNot of sexpr
-  | SIn of sexpr * sexpr
-  | SNotIn of sexpr * sexpr
-  | SCall of string * sexpr list
-
-type sstmt =
-  | SBreak
-  | SContinue
-  | SExpr of sexpr
-  | SFunction of string * decl list * typ * sstmt list
-  | SReturn of sexpr
-  | SIf of sexpr * sstmt list * sstmt list
-  | SWhile of sexpr * sstmt list
-  | SFor of string * sexpr * sstmt list
-  | SPrint of sexpr
-  | SDecl of string * typ
-
-type sprogram = sstmt list
-(* Added defs above from sast.ml for VSCode syntax checking *)
-
 let rec check (program : program) : sprogram =
   (* in-place mutation *)
-  let var_decls = Hashtbl.create 100 in
-  let func_decls = Hashtbl.create 100 in
-  let add_func (fd : stmt) =
+  let var_decls_global = Hashtbl.create 100 in
+  let func_decls_global = Hashtbl.create 100 in
+  let add_func
+      ( (decl_vars : ('a, 'b) Hashtbl.t),
+        (decl_funcs : ('a, 'c) Hashtbl.t),
+        (fd : stmt) ) =
     match fd with
     | Function (fname, _, _, _) -> (
-        if Hashtbl.mem var_decls fname then
+        if Hashtbl.mem decl_vars fname then
           raise (Failure (fname ^ " already declared as variables"))
         else
           try
-            let _ = Hashtbl.find func_decls fname in
+            let _ = Hashtbl.find decl_funcs fname in
             raise (Failure ("Duplicate function " ^ fname))
-          with Not_found -> Hashtbl.add func_decls fname fd)
+          with Not_found -> Hashtbl.add decl_funcs fname fd)
     | _ -> raise (Failure "Developer Error")
   in
-  let find_func (fname : string) : stmt =
-    try Hashtbl.find func_decls fname
+  let find_func ((decl_funcs : ('a, 'c) Hashtbl.t), (fname : string)) : stmt =
+    try Hashtbl.find decl_funcs fname
     with Not_found -> raise (Failure ("Unbound function " ^ fname))
   in
-  let add_var ((id : string), (t : typ)) =
+  let add_var
+      ( (decl_vars : ('a, 'b) Hashtbl.t),
+        (decl_funcs : ('a, 'c) Hashtbl.t),
+        (id : string),
+        (t : typ) ) =
     try
-      if Hashtbl.mem func_decls id then
+      if Hashtbl.mem decl_funcs id then
         raise (Failure (id ^ "already declared as function"))
       else
-        let _ = Hashtbl.find var_decls id in
+        let _ = Hashtbl.find decl_vars id in
         raise (Failure ("Duplicate variable " ^ id))
-    with Not_found -> Hashtbl.add var_decls id t
+    with Not_found -> Hashtbl.add decl_vars id t
   in
-  let find_var_type (id : string) : typ =
-    try Hashtbl.find var_decls id
+  let find_var_type ((decl_vars : ('a, 'b) Hashtbl.t), (id : string)) : typ =
+    try Hashtbl.find decl_vars id
     with Not_found -> raise (Failure ("Unbound variable " ^ id))
   in
   let rec raise_error_if_array_has_elems_with_diff_types (l : sexpr list) =
@@ -141,14 +60,18 @@ let rec check (program : program) : sprogram =
         | _ -> false && result)
       true params args
   in
-  let rec check_expr (e : expr) : sexpr =
+  let rec check_expr
+      ( (decl_vars : ('a, 'b) Hashtbl.t),
+        (decl_funcs : ('a, 'c) Hashtbl.t),
+        (e : expr) ) : sexpr =
     match e with
     | IntLit i -> (Int, SIntLit i)
     | FloatLit f -> (Float, SFloatLit f)
     | StringLit s -> (String, SStringLit s)
     | BoolLit b -> (Bool, SBoolLit b)
     | ArrayLit a ->
-        let s_el = List.map check_expr a in
+        let check_expr_with_decls ex = check_expr (decl_vars, decl_funcs, ex) in
+        let s_el = List.map check_expr_with_decls a in
         let s_stmt =
           match s_el with
           | [] -> (EmptyArray, SArrayLit s_el)
@@ -159,9 +82,12 @@ let rec check (program : program) : sprogram =
               (head_type, SArrayLit s_el)
         in
         s_stmt
-    | TupleLit t -> (Tuple, STupleLit (List.map check_expr t))
+    | TupleLit t ->
+        let check_expr_with_decls ex = check_expr (decl_vars, decl_funcs, ex) in
+        (Tuple, STupleLit (List.map check_expr_with_decls t))
     | Binop (e1, bin_op, e2) ->
-        let t1, e1' = check_expr e1 and t2, e2' = check_expr e2 in
+        let t1, e1' = check_expr (decl_vars, decl_funcs, e1)
+        and t2, e2' = check_expr (decl_vars, decl_funcs, e2) in
         if t1 = t2 then
           let t =
             match bin_op with
@@ -175,21 +101,24 @@ let rec check (program : program) : sprogram =
           in
           (t, SBinop ((t1, e1'), bin_op, (t2, e2')))
         else raise (Failure "Incompatible operands")
-    | Id var -> (find_var_type var, SId var)
+    | Id var -> (find_var_type (decl_vars, var), SId var)
     | Asn (var, e) ->
-        let t = find_var_type var and t', e' = check_expr e in
+        let t = find_var_type (decl_vars, var)
+        and t', e' = check_expr (decl_vars, decl_funcs, e) in
         if t = t' then (t, SAsn (var, (t', e')))
         else raise (Failure "Incompatible type")
     | AugAsn (var, aug_op, e) ->
-        let t1 = find_var_type var and t2, e' = check_expr e in
+        let t1 = find_var_type (decl_vars, var)
+        and t2, e' = check_expr (decl_vars, decl_funcs, e) in
         if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
         else raise (Failure "Incompatible type")
     | Not e ->
-        let t, e' = check_expr e in
+        let t, e' = check_expr (decl_vars, decl_funcs, e) in
         if t = Bool then (t, SNot (t, e'))
         else raise (Failure "Expect boolean expression")
     | NotIn (e1, e2) ->
-        let t1, e1' = check_expr e1 and t2, e2' = check_expr e2 in
+        let t1, e1' = check_expr (decl_vars, decl_funcs, e1)
+        and t2, e2' = check_expr (decl_vars, decl_funcs, e2) in
         let sexpr =
           match t2 with
           | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
@@ -202,9 +131,12 @@ let rec check (program : program) : sprogram =
         sexpr
     | Call (called_fname, args) ->
         let s_stmt =
-          match find_func called_fname with
+          match find_func (decl_funcs, called_fname) with
           | Function (fname, params, frtyp, fbody) ->
-              let s_args = List.map check_expr args in
+              let check_expr_with_decls ex =
+                check_expr (decl_vars, decl_funcs, ex)
+              in
+              let s_args = List.map check_expr_with_decls args in
               if args_has_same_type (params, s_args) then
                 (frtyp, SCall (fname, s_args))
               else raise (Failure "Incompatible argument types")
@@ -213,39 +145,55 @@ let rec check (program : program) : sprogram =
         s_stmt
     | _ -> raise (Failure "Semantically invalid expression")
   in
-  let rec check_stmt (stmt : stmt) : sstmt =
+  let rec check_stmt
+      ( (decl_vars : ('a, 'b) Hashtbl.t),
+        (decl_funcs : ('a, 'c) Hashtbl.t),
+        (stmt : stmt) ) : sstmt =
     match stmt with
     | Break -> SBreak
     | Continue -> SContinue
-    | Expr e -> SExpr (check_expr e)
+    | Expr e -> SExpr (check_expr (decl_vars, decl_funcs, e))
     | Function (fname, params, rtyp, fbody) ->
-        add_func (Function (fname, params, rtyp, fbody));
-        let s_fbody = List.map check_stmt fbody in
+        add_func (decl_vars, decl_funcs, Function (fname, params, rtyp, fbody));
+        let decl_vars_in_scope = Hashtbl.copy decl_vars in
+        let decl_funcs_in_scope = Hashtbl.copy decl_funcs in
+        let add_var2 (id, t) =
+          add_var (decl_vars_in_scope, decl_funcs_in_scope, id, t)
+        in
+        List.iter add_var2 params;
+        let check_stmt_with_decls st =
+          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st)
+        in
+        let s_fbody = List.map check_stmt_with_decls fbody in
         SFunction (fname, params, rtyp, s_fbody)
-    | Return e -> SReturn (check_expr e)
+    | Return e -> SReturn (check_expr (decl_vars, decl_funcs, e))
     | If (e, if_block, else_block) ->
-        let t, e' = check_expr e
+        let t, e' = check_expr (decl_vars, decl_funcs, e)
         and s_if_block = check if_block
         and s_else_block = check else_block in
         if t = Bool then SIf ((t, e'), s_if_block, s_else_block)
         else raise (Failure "Expect boolean expression")
     | While (e, while_block) ->
-        let t, e' = check_expr e and s_while_block = check while_block in
+        let t, e' = check_expr (decl_vars, decl_funcs, e)
+        and s_while_block = check while_block in
         if t = Bool then SWhile ((t, e'), s_while_block)
         else raise (Failure "Expect boolean expression")
     | For (id, e, for_block) ->
-        let t, e' = check_expr e in
+        let t, e' = check_expr (decl_vars, decl_funcs, e) in
         let s_stmt =
           match t with
           | Array array_elem_typ ->
-              add_var (id, array_elem_typ);
+              add_var (decl_vars, decl_funcs, id, array_elem_typ);
               SFor (id, (t, e'), check for_block)
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
-    | Print e -> SPrint (check_expr e)
+    | Print e -> SPrint (check_expr (decl_vars, decl_funcs, e))
     | Decl (id, t) ->
-        add_var (id, t);
+        add_var (decl_vars, decl_funcs, id, t);
         SDecl (id, t)
   in
-  List.map check_stmt program
+  let check_stmt_with_decls st =
+    check_stmt (var_decls_global, func_decls_global, st)
+  in
+  List.map check_stmt_with_decls program
