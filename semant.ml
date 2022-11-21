@@ -122,9 +122,9 @@ let rec check (program : program) : sprogram =
         let sexpr =
           match t2 with
           | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array elem_typ when elem_typ = t1 ->
+          | Array (elem_typ, _) when elem_typ = t1 ->
               (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array elem_typ when elem_typ != t1 ->
+          | Array (elem_typ, _) when elem_typ != t1 ->
               raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
@@ -182,8 +182,8 @@ let rec check (program : program) : sprogram =
         let t, e' = check_expr (decl_vars, decl_funcs, e) in
         let s_stmt =
           match t with
-          | Array array_elem_typ ->
-              add_var (decl_vars, decl_funcs, id, array_elem_typ);
+          | Array (array_elem_typ, _) ->
+              add_var (decl_vars, decl_funs, id, array_elem_typ);
               SFor (id, (t, e'), check for_block)
           | _ -> raise (Failure "Expect Array")
         in
