@@ -94,37 +94,25 @@ let rec check (program : program) : sprogram =
   (* in-place mutation *)
   let var_decls = Hashtbl.create 100 in
   let func_decls = Hashtbl.create 100 in
-  let name_defined_in_vars (id : string) : bool =
-    try
-      let _ = Hashtbl.find var_decls id in
-      true
-    with Not_found -> false
-  in
   let add_func (fd : stmt) =
     match fd with
     | Function (fname, _, _, _) -> (
-        if name_defined_in_vars fname then
+        if Hashtbl.mem var_decls fname then
           raise (Failure (fname ^ " already declared as variables"))
         else
           try
             let _ = Hashtbl.find func_decls fname in
             raise (Failure ("Duplicate function " ^ fname))
           with Not_found -> Hashtbl.add func_decls fname fd)
-    | _ -> raise (Failure "Expect function")
+    | _ -> raise (Failure "Developer Error")
   in
   let find_func (fname : string) : stmt =
     try Hashtbl.find func_decls fname
     with Not_found -> raise (Failure ("Unbound function " ^ fname))
   in
-  let name_defined_in_funcs (fname : string) : bool =
-    try
-      let _ = Hashtbl.find func_decls fname in
-      true
-    with Not_found -> false
-  in
   let add_var ((id : string), (t : typ)) =
     try
-      if name_defined_in_funcs id then
+      if Hashtbl.mem func_decls id then
         raise (Failure (id ^ "already declared as function"))
       else
         let _ = Hashtbl.find var_decls id in
@@ -135,7 +123,7 @@ let rec check (program : program) : sprogram =
     try Hashtbl.find var_decls id
     with Not_found -> raise (Failure ("Unbound variable " ^ id))
   in
-  let rec array_has_same_elems (l : sexpr list) =
+  let rec raise_error_if_array_has_elems_with_diff_types (l : sexpr list) =
     match l with
     | [] -> ()
     | (t1, _) :: (t2, _) :: _ when t1 != t2 ->
@@ -143,14 +131,14 @@ let rec check (program : program) : sprogram =
           (Failure
              ("found array of mixed types (" ^ string_of_typ t1 ^ ", and "
             ^ string_of_typ t2))
-    | _ :: t -> array_has_same_elems t
+    | _ :: t -> raise_error_if_array_has_elems_with_diff_types t
   in
   let args_has_same_type ((params : decl list), (args : sexpr list)) : bool =
     List.fold_left2
       (fun result param arg ->
         match (param, arg) with
-        | (_, t1), (t2, _) when t1 = t2 -> true
-        | _ -> false)
+        | (_, t1), (t2, _) when t1 = t2 -> true && result
+        | _ -> false && result)
       true params args
   in
   let rec check_expr (e : expr) : sexpr =
@@ -165,7 +153,7 @@ let rec check (program : program) : sprogram =
           match s_el with
           | [] -> (EmptyArray, SArrayLit s_el)
           | _ ->
-              let _ = array_has_same_elems s_el in
+              let _ = raise_error_if_array_has_elems_with_diff_types s_el in
               let head = List.hd s_el in
               let head_type, _ = head in
               (head_type, SArrayLit s_el)
@@ -191,11 +179,11 @@ let rec check (program : program) : sprogram =
     | Asn (var, e) ->
         let t = find_var_type var and t', e' = check_expr e in
         if t = t' then (t, SAsn (var, (t', e')))
-        else raise (Failure "Imcompatible type")
+        else raise (Failure "Incompatible type")
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type var and t2, e' = check_expr e in
         if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
-        else raise (Failure "Imcompatible type")
+        else raise (Failure "Incompatible type")
     | Not e ->
         let t, e' = check_expr e in
         if t = Bool then (t, SNot (t, e'))
@@ -207,6 +195,8 @@ let rec check (program : program) : sprogram =
           | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
           | Array elem_typ when elem_typ = t1 ->
               (Bool, SNotIn ((t1, e1'), (t2, e2')))
+          | Array elem_typ when elem_typ = t1 ->
+              raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
         sexpr
