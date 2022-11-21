@@ -1,0 +1,8 @@
+
+
+Parsed Program: 
+
+def add(x: int, y: int) -> int:
+return (int : (int : x) + (int : y))
+print((int : add((int : 1), (int : 2))))
+<EOF>
