@@ -1,4 +1,4 @@
-all: clean tests check
+all: clean tests
 
 # clean all artifacts
 clean:
@@ -26,7 +26,3 @@ yacc: clean
 # run tests
 tests:
 	dune test
-
-# check the successful test percentage. Used in CI.
-check:
-	./check_test_percentage.sh
