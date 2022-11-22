@@ -2,10 +2,10 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 
-let rec check (program : program) : sprogram =
-  (* in-place mutation *)
-  let var_decls_global = Hashtbl.create 100 in
-  let func_decls_global = Hashtbl.create 100 in
+let rec check
+    ( (var_decls_global : ('a, 'b) Hashtbl.t),
+      (func_decls_global : ('a, 'c) Hashtbl.t),
+      (program : program) ) : sprogram =
   let add_func
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
@@ -169,13 +169,13 @@ let rec check (program : program) : sprogram =
     | Return e -> SReturn (check_expr (decl_vars, decl_funcs, e))
     | If (e, if_block, else_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_if_block = check if_block
-        and s_else_block = check else_block in
+        and s_if_block = check (decl_vars, decl_funcs, if_block)
+        and s_else_block = check (decl_vars, decl_funcs, else_block) in
         if t = Bool then SIf ((t, e'), s_if_block, s_else_block)
         else raise (Failure "Expect boolean expression")
     | While (e, while_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_while_block = check while_block in
+        and s_while_block = check (decl_vars, decl_funcs, while_block) in
         if t = Bool then SWhile ((t, e'), s_while_block)
         else raise (Failure "Expect boolean expression")
     | For (id, e, for_block) ->
@@ -184,7 +184,7 @@ let rec check (program : program) : sprogram =
           match t with
           | Array array_elem_typ ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
-              SFor (id, (t, e'), check for_block)
+              SFor (id, (t, e'), check (decl_vars, decl_funcs, for_block))
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
@@ -197,3 +197,9 @@ let rec check (program : program) : sprogram =
     check_stmt (var_decls_global, func_decls_global, st)
   in
   List.map check_stmt_with_decls program
+
+let check_program (program : program) : sprogram =
+  (* in-place mutation *)
+  let var_decls_global = Hashtbl.create 100 in
+  let func_decls_global = Hashtbl.create 100 in
+  check (var_decls_global, func_decls_global, program)
