@@ -9,6 +9,8 @@ Location: [Zoom](https://columbiauniversity.zoom.us/j/93494146149)
 Run `make` to clean, build, test, and check the successful test percentage. 
 Review the Makefile for specific steps in this process.
 
+To run arbitrary ComPyle code, save your program to `example.cmpy` and run `make run`. You can view the output in the `example.out` file.
+
 ## Tests
 test.ml holds the tests for compyle's parser. Perhaps more tests beyond parsing will live there -- perhaps we will break them out to different files.
 
