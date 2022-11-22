@@ -64,8 +64,8 @@ let expected = [comparing; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses tuples" in
-let comparing = "x: tuple\nx = (1, \"hello world\", true)" in
-let expected = ["x: tuple"; "x = (1, \"hello world\", true)"; ""] in
+let comparing = "x: tuple\nx = (1, \"hello world\", True)" in
+let expected = ["x: tuple"; "x = (1, \"hello world\", True)"; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses arrays" in
@@ -74,8 +74,8 @@ let expected = ["x: int[]"; "x = [1, 2, 3, 4, 5]"; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses multi-dimensional arrays" in
-let comparing = "x: bool[][]\nx = [[true, true], [false, false], [true, false], [false, true]]" in
-let expected = ["x: bool[][]"; "x = [[true, true], [false, false], [true, false], [false, true]]"; ""] in
+let comparing = "x: bool[][]\nx = [[True, True], [False, False], [True, False], [False, True]]" in
+let expected = ["x: bool[][]"; "x = [[True, True], [False, False], [True, False], [False, True]]"; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 (*
