@@ -1,0 +1,3 @@
+(tests
+ (names scan_and_parse_tests)
+ (libraries compyle))

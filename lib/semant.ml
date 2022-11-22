@@ -132,7 +132,7 @@ let rec check (program : program) : sprogram =
     | Call (called_fname, args) ->
         let s_stmt =
           match find_func (decl_funcs, called_fname) with
-          | Function (fname, params, frtyp, fbody) ->
+          | Function (fname, params, frtyp, _) ->
               let check_expr_with_decls ex =
                 check_expr (decl_vars, decl_funcs, ex)
               in

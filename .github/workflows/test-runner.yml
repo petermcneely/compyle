@@ -19,7 +19,4 @@ jobs:
         run: docker build . --file Dockerfile --tag test-runner
 
       - name: Test
-        run: docker run -v $(pwd)/test_percentage.txt:/workspace/test_percentage.txt test-runner
-
-      - name: Check
-        run: make check
+        run: docker run --rm test-runner

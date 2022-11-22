@@ -5,28 +5,27 @@ clean:
 	rm -rf ./_build
 	rm -f test.native
 	rm -rf compyle.native
-	rm -rf parser.mli
-	rm -rf parser.ml
-	rm -rf parser.output
-
+	rm -rf lib/parser.mli
+	rm -rf lib/parser.ml
+	rm -rf lib/parser.output
 
 # clean and build compyle.
 build: clean
-	ocamlbuild compyle.native
+	dune clean
+	dune build
 
 # build and run compyle. Save the output to ./example.out
 run: build
-	./compyle.native > ./example.out
+	dune exec compyle -- -s example.cmpy > example.out
 
 # shortcut for running ocamlyacc on the parser. Helpful when
 # debugging and writing the parser.
 yacc: clean
-	ocamlyacc -v parser.mly
+	ocamlyacc -v lib/parser.mly
 
 # run tests
 tests:
-	ocamlbuild test.native
-	./test.native
+	dune test
 
 # check the successful test percentage. Used in CI.
 check:

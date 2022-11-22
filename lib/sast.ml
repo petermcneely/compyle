@@ -69,7 +69,7 @@ let rec string_of_sstmt = function
   | SExpr e -> string_of_sexpr e ^ "\n"
   | SFunction (fname, formals, return_type, block) ->
       "def " ^ fname ^ "("
-      ^ string_of_formals formals formals
+      ^ string_of_formals formals
       ^ ") -> " ^ string_of_typ return_type ^ ":" ^ string_of_sblock block
   | SReturn e -> "return " ^ string_of_sexpr e ^ "\n"
   | SIf (e, if_block, elif_blocks) ->
