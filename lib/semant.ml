@@ -189,9 +189,17 @@ let rec check (program : program) : sprogram =
         in
         s_stmt
     | Print e -> SPrint (check_expr (decl_vars, decl_funcs, e))
-    | Decl (id, t) ->
+    | Decl (id, t, expr_opt) ->
         add_var (decl_vars, decl_funcs, id, t);
-        SDecl (id, t)
+        let some_sexpr = match expr_opt with
+            None -> None
+          | Some e ->
+              let sexpr = check_expr (decl_vars, decl_funcs, e) in
+              if t != fst sexpr then
+                raise (Failure "Incompatible type")
+              else
+                Some sexpr in
+        SDecl (id, t, some_sexpr)
   in
   let check_stmt_with_decls st =
     check_stmt (var_decls_global, func_decls_global, st)

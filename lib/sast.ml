@@ -30,7 +30,7 @@ type sstmt =
   | SWhile of sexpr * sstmt list
   | SFor of string * sexpr * sstmt list
   | SPrint of sexpr
-  | SDecl of string * typ
+  | SDecl of string * typ * sexpr option
 
 type sprogram = sstmt list
 
@@ -63,6 +63,10 @@ and string_of_sexprs l =
     string_of_sexpr (List.hd l) ^ ", " ^ string_of_sexprs (List.tl l)
   else ""
 
+let string_of_sexpr_opt = function
+  | None -> ""
+  | Some se -> string_of_sexpr se
+
 let rec string_of_sstmt = function
   | SBreak -> "break\n"
   | SContinue -> "continue\n"
@@ -80,7 +84,7 @@ let rec string_of_sstmt = function
   | SFor (v, e, b) ->
       "for " ^ v ^ " in " ^ string_of_sexpr e ^ ":" ^ string_of_sblock b
   | SPrint e -> "print(" ^ string_of_sexpr e ^ ")\n"
-  | SDecl (id, typ) -> string_of_decl (id, typ) ^ "\n"
+  | SDecl (id, typ, sexpr_opt) -> string_of_decl (id, typ) ^ string_of_sexpr_opt sexpr_opt ^ "\n"
 
 and string_of_selif_blocks elif_blocks =
   String.concat "\n"

@@ -52,7 +52,7 @@ stmt_list:
 	| NEWLINE stmt stmt_list { $2 :: $3 }
 
 stmt:
-	vdecl NEWLINE { Decl(fst $1, snd $1) }
+	ID COLON typ assign_opt NEWLINE { Decl($1, $3, $4) }
 	| expr NEWLINE { Expr($1) }
 	| function_stmt { $1 }
 	| return_stmt NEWLINE { $1 }
@@ -62,6 +62,10 @@ stmt:
 	| for_stmt { $1 }
 	| BREAK NEWLINE { Break }
 	| CONTINUE NEWLINE { Continue }
+
+assign_opt:
+	| { None }
+	| ASSIGN expr { Some($2) }
 
 block:
 	NEWLINE INDENT stmt_list DEDENT { $3 }
