@@ -5,6 +5,9 @@ TA: Weicheng Zhao (wz2578)
 Office Hours: Friday 9:30 - 11:30 AM ET
 Location: [Zoom](https://columbiauniversity.zoom.us/j/93494146149)
 
+## Dune Dependency
+This project depends on dune. To install, run `opam install dune`.
+
 ## Makefile
 Run `make` to clean, build, test, and check the successful test percentage. 
 Review the Makefile for specific steps in this process.
@@ -12,7 +15,7 @@ Review the Makefile for specific steps in this process.
 To run arbitrary ComPyle code, save your program to `example.cmpy` and run `make run`. You can view the output in the `example.out` file.
 
 ## Tests
-test.ml holds the tests for compyle's parser. Perhaps more tests beyond parsing will live there -- perhaps we will break them out to different files.
+Run `make tests` to execute the tests within this repository. The tests can be found under the test/ directory.
 
 ## CI
 .github/workflows/test-runner.yml builds and runs tests on each merge to `main` and each pull request. This will ensure we are pushing

@@ -93,7 +93,7 @@ and string_of_dimensions (dimensions: int): string =
 let string_of_decl (d : string * typ) : string =
   fst d ^ ": " ^ string_of_typ (snd d)
 
-let string_of_formals f list =
+let string_of_formals (f: (string * typ) list) =
   String.concat ", " (List.map (fun x -> string_of_decl x) f)
 
 let rec string_of_expr = function
@@ -125,7 +125,7 @@ let rec string_of_stmt = function
   | Expr e -> string_of_expr e ^ "\n"
   | Function (fname, formals, return_type, block) ->
       "def " ^ fname ^ "("
-      ^ string_of_formals formals formals
+      ^ string_of_formals formals
       ^ ") -> " ^ string_of_typ return_type ^ ":" ^ string_of_block block
   | Return e -> "return " ^ string_of_expr e ^ "\n"
   | If (e, if_block, elif_blocks) ->

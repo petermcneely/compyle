@@ -1,11 +1,13 @@
 FROM petermcneely/docker-ocaml:4.14
 
-COPY ast.ml /workspace/ast.ml
-COPY lexing_stack.ml /workspace/lexing_stack.ml
-COPY parser.mly /workspace/parser.mly
-COPY scanner.mll /workspace/scanner.mll
-COPY test.ml /workspace/test.ml
+WORKDIR /workspace
 
-RUN ocamlbuild test.native
+RUN opam install dune
 
-CMD ["/workspace/test.native"]
+COPY bin/ /workspace/bin/
+COPY lib/ /workspace/lib/
+COPY test/ /workspace/test/
+COPY dune-project /workspace/dune-project
+
+ENTRYPOINT ["dune"]
+CMD ["test"]

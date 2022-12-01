@@ -1,5 +1,3 @@
-open Ast
-
 (*
 Boiler plate set up for running tests   
 *)
@@ -8,13 +6,20 @@ let count_tests = ref 0;;
 
 let parse_program (input: string) =
   let lexbuf = Lexing.from_string input in
-  let indentation_manager = Lexing_stack.create_indentation_manager() in
-  let ast = Parser.program (Scanner.token indentation_manager) lexbuf in
-  Ast.string_of_program ast in
+  let indentation_manager = Compyle.Lexing_stack.create_indentation_manager() in
+  let ast = Compyle.Parser.program (Compyle.Scanner.token indentation_manager) lexbuf in
+  Compyle.Ast.string_of_program ast in
 
 let pass_test () =
   passed_tests := (!passed_tests + 1);
-  print_endline "\tYAY" in
+  print_endline "\tYAY";
+  assert true
+in
+
+let fail_test () =
+  print_endline "\tOOPS";
+  assert false
+in
 
 let run_test ?(debug: bool = false) (test_case: string) (input: string) (expected: string list): unit =
   print_endline (test_case ^ ":");
@@ -27,7 +32,7 @@ let run_test ?(debug: bool = false) (test_case: string) (input: string) (expecte
   if List.equal (fun x y -> if debug then print_endline ("x: " ^ x ^ " | y: " ^ y); x = y) program_lines expected then
     pass_test()
   else
-    print_endline("\tOOPS") in
+    fail_test() in
 
 (*
 The actual test cases   
@@ -85,6 +90,3 @@ print_newline();
 print_int !passed_tests; print_string "/"; print_int(!count_tests); print_endline " tests passed!";
 let percentage_passed = (float_of_int !passed_tests) /. (float_of_int !count_tests) *. 100. in
 print_endline (string_of_float percentage_passed ^ "%");
-let output = open_out "test_percentage.txt" in
-Printf.fprintf output "%.2f" percentage_passed;
-close_out output;
