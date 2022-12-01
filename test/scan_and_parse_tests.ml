@@ -83,6 +83,11 @@ let comparing = "x: bool[][]\nx = [[True, True], [False, False], [True, False], 
 let expected = ["x: bool[][]"; "x = [[True, True], [False, False], [True, False], [False, True]]"; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
+let test_case = "Parses declaring and assigning on the same line" in
+let comparing = "sum: int = 3 + 4" in
+let expected = [comparing; ""] in
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)

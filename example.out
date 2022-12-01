@@ -3,6 +3,7 @@
 Parsed Program: 
 
 def add(x: int, y: int) -> int:
-return (int : (int : x) + (int : y))
+sum: int(int : (int : x) + (int : y))
+return (int : sum)
 print((int : add((int : 1), (int : 2))))
 <EOF>

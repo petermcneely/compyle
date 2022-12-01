@@ -2,5 +2,6 @@ def add(x: int, y: int) -> int:
 """
 This method adds two integers together
 """
-	return x + y
+	sum: int = x + y
+	return sum
 print(add(1, 2))

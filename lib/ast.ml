@@ -46,7 +46,7 @@ type stmt =
   | While of expr * stmt list
   | For of string * expr * stmt list
   | Print of expr
-  | Decl of string * typ
+  | Decl of string * typ * expr option
 
 type program = stmt list
 
@@ -119,6 +119,10 @@ and string_of_exprs l =
     string_of_expr (List.hd l) ^ ", " ^ string_of_exprs (List.tl l)
   else ""
 
+let string_of_expr_opt = function
+  | None -> ""
+  | Some e -> " = " ^ string_of_expr e
+
 let rec string_of_stmt = function
   | Break -> "break\n"
   | Continue -> "continue\n"
@@ -136,7 +140,7 @@ let rec string_of_stmt = function
   | For (v, e, b) ->
       "for " ^ v ^ " in " ^ string_of_expr e ^ ":" ^ string_of_block b
   | Print e -> "print(" ^ string_of_expr e ^ ")\n"
-  | Decl (id, typ) -> string_of_decl (id, typ) ^ "\n"
+  | Decl (id, typ, expr_opt) -> string_of_decl (id, typ) ^ string_of_expr_opt expr_opt ^ "\n"
 
 and string_of_elif_blocks elif_blocks =
   String.concat "\n"
