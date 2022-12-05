@@ -95,6 +95,10 @@ let rec check (program : program) : sprogram =
             | (Add | Sub | Mult | Div | Mod | Exp) when t1 = Float -> Float
             | (And | Or) when t1 = Bool -> Bool
             | (Eq | Neq) when t1 = Bool -> Bool
+            | (Eq | Neq) when t1 = Int -> Bool
+            | (Eq | Neq) when t1 = Float -> Bool
+            | (Eq | Neq) when t1 = String -> Bool
+           (* Todo: Eq/Neq for arrays and tuples ?*)
             | (Gt | Lt | Geq | Leq) when t1 = Float -> Bool
             | (Gt | Lt | Geq | Leq) when t1 = Int -> Bool
             | _ -> raise (Failure "Incompatible operands")
