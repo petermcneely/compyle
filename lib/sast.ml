@@ -41,7 +41,7 @@ let rec string_of_sexpr (t, e) =
     | SIntLit i -> string_of_int i
     | SFloatLit f -> string_of_float f
     | SStringLit s -> s
-    | SBoolLit b -> string_of_bool b
+    | SBoolLit b -> if b then "True" else "False"
     | SId s -> s
     | SArrayLit l -> "[" ^ string_of_sexprs l ^ "]"
     | STupleLit l -> "(" ^ string_of_sexprs l ^ ")"
