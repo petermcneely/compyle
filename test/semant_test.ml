@@ -112,9 +112,9 @@ let addition = "x: float = 4." in
 let expected = ["x: float(float : 4.)"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
-let test_case = "Semantically checks ids and assignment" in
-let addition = "x: float = 4." in
-let expected = ["x: float(float : 4.)"; ""] in
+let test_case = "Semantically checks id" in
+let addition = "x: float" in
+let expected = ["x: float"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks AugAsn" in
@@ -127,9 +127,28 @@ let addition = "not True" in
 let expected = ["(bool : not (bool : True))"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
-let test_case = "Semantically checks Not operator" in
-let addition = "5 not in [5,4,7]" in
-let expected = ["(bool : not (bool : True))"; ""] in
+let test_case = "Semantically checks NotIn operator" in
+let addition = "5 not in [5, 2]" in
+let expected = ["(bool : (int : 5) not in (int[] : [(int : 5), (int : 2)]))"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
+
+(* let test_case = "Scans, parses, and generates the ast for the hello world program" in
+let program = "\
+def add(x: int, y: int) -> int:\r\n\
+\"\"\"\r\n
+this adds two integers\r\n
+\"\"\"\r\n
+\tsum: int\r\n
+\tsum = x + y\r\n
+\treturn sum\r\n
+print(add(x,y))\r\n" in
+let expected = ["def add(x: int, y: int) -> int:"; "sum: int"; "sum = x + y"; "return sum"; "print(add(x, y))"; "" ] in
+run_test ~debug:true test_case program expected;
+*)
+
+let test_case = "Semantically checks Return" in
+let addition = "x: int = 5\n return x" in
+let expected = ["x: int(int : 5)"; "return (int : x)"; ""] in
 run_test ~debug:true test_case (addition ^ "\n") expected;
 
 (*
