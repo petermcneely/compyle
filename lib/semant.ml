@@ -45,7 +45,7 @@ let rec check (program : program) : sprogram =
   let rec raise_error_if_array_has_elems_with_diff_types (l : sexpr list) =
     match l with
     | [] -> ()
-    | (t1, _) :: (t2, _) :: _ when t1 != t2 ->
+    | (t1, _) :: (t2, _) :: _ when not (t1 = t2) ->
         raise
           (Failure
              ("found array of mixed types (" ^ string_of_typ t1 ^ ", and "
@@ -79,7 +79,11 @@ let rec check (program : program) : sprogram =
               let _ = raise_error_if_array_has_elems_with_diff_types s_el in
               let head = List.hd s_el in
               let head_type, _ = head in
-              (head_type, SArrayLit s_el)
+              let resolve_array_type = function
+              |  Array (array_typ, dimension) -> Array (array_typ, dimension+1)
+              |  _ as s -> Array (s,1) 
+              in
+              (resolve_array_type head_type, SArrayLit s_el)
         in
         s_stmt
     | TupleLit t ->
@@ -95,10 +99,6 @@ let rec check (program : program) : sprogram =
             | (Add | Sub | Mult | Div | Mod | Exp) when t1 = Float -> Float
             | (And | Or) when t1 = Bool -> Bool
             | (Eq | Neq) when t1 = Bool -> Bool
-            | (Eq | Neq) when t1 = Int -> Bool
-            | (Eq | Neq) when t1 = Float -> Bool
-            | (Eq | Neq) when t1 = String -> Bool
-           (* Todo: Eq/Neq for arrays and tuples ?*)
             | (Gt | Lt | Geq | Leq) when t1 = Float -> Bool
             | (Gt | Lt | Geq | Leq) when t1 = Int -> Bool
             | _ -> raise (Failure "Incompatible operands")
@@ -199,10 +199,10 @@ let rec check (program : program) : sprogram =
             None -> None
           | Some e ->
               let sexpr = check_expr (decl_vars, decl_funcs, e) in
-              if t != fst sexpr then
-                raise (Failure "Incompatible type")
+              if t = fst sexpr then
+                Some sexpr
               else
-                Some sexpr in
+                raise (Failure ("Incompatible type. Expected Var type:" ^ string_of_typ t ^ " Received expression type: " ^ string_of_typ (fst sexpr))) in
         SDecl (id, t, some_sexpr)
   in
   let check_stmt_with_decls st =

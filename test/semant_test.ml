@@ -19,7 +19,6 @@ in
   
 let fail_test () =
   print_endline "\tOOPS";
-  assert false
 in
   
 let run_test ?(debug: bool = false) (test_case: string) (input: string) (expected: string list): unit =
@@ -59,13 +58,13 @@ let expected = ["(bool : True)"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks array literal" in
-let addition = "x: int = [2,3]" in
-let expected = ["x: int(int : [(int : 2), (int : 3)])"; ""] in
+let addition = "[2, 3]" in
+let expected = ["(int[] : [(int : 2), (int : 3)])"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks multi-dim array literal" in
-let addition = "[[4,5], [5,6]]" in
-let expected = ["(int : [(int : [(int : 4), (int : 5)]), (int : [(int : 5), (int : 6)])])"; ""] in
+let addition = "[[2,3],[3,4]]" in
+let expected = ["(int[][] : [(int[] : [(int : 2), (int : 3)]), (int[] : [(int : 3), (int : 4)])])"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks multi-dim tuple literal" in
@@ -99,9 +98,9 @@ let expected = ["(bool : (bool : (bool : True) and (bool : False)) or (bool : Tr
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks eq/neq binary operation" in
-let addition = "4==4" in
-let expected = ["(bool : (int : 4) == (int : 4))"; ""] in
-run_test ~debug:false test_case (addition ^ "\n") expected;
+let addition = "True==True" in
+let expected = ["(bool : (bool : True) == (bool : True))"; ""] in
+run_test ~debug:true test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks gt/lt/geq/leq binary operation" in
 let addition = "4 < 4" in
@@ -125,6 +124,11 @@ run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks Not operator" in
 let addition = "not True" in
+let expected = ["(bool : not (bool : True))"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
+
+let test_case = "Semantically checks Not operator" in
+let addition = "5 not in [5,4,7]" in
 let expected = ["(bool : not (bool : True))"; ""] in
 run_test ~debug:true test_case (addition ^ "\n") expected;
 
