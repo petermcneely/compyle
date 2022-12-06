@@ -37,6 +37,21 @@ let run_test ?(debug: bool = false) (test_case: string) (input: string) (expecte
 (*
 The actual test cases   
 *)
+let test_case = "Scans, parses, and generates the ast for the hello world program" in
+let program = "\
+def add(x: int, y: int) -> int:\r\n\
+\"\"\"\r\n
+this adds two integers\r\n
+\"\"\"\r\n
+\tsum: int\r\n
+\tsum = x + y\r\n
+\treturn sum\r\n
+x: int = 5\r\n
+y: int = 6\r\n
+print(add(x,y))\r\n" in
+let expected = ["def add(x: int, y: int) -> int:"; "sum: int"; "(int : sum = (int : (int : x) + (int : y)))"; "return (int : sum)"; "x: int(int : 5)"; "y: int(int : 6)"; "print((int : add((int : x), (int : y))))"; "" ] in
+run_test ~debug:false test_case program expected;
+
 let test_case = "Semantically checks int literal" in
 let addition = "5" in
 let expected = ["(int : 5)"; ""] in
@@ -93,14 +108,9 @@ let expected = ["(bool : (bool : (bool : True) and (bool : False)) or (bool : Tr
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks eq/neq binary operation" in
-let addition = "True and False or True" in
-let expected = ["(bool : (bool : (bool : True) and (bool : False)) or (bool : True))"; ""] in
-run_test ~debug:false test_case (addition ^ "\n") expected;
-
-let test_case = "Semantically checks eq/neq binary operation" in
 let addition = "True==True" in
 let expected = ["(bool : (bool : True) == (bool : True))"; ""] in
-run_test ~debug:true test_case (addition ^ "\n") expected;
+run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks gt/lt/geq/leq binary operation" in
 let addition = "4 < 4" in
@@ -132,24 +142,49 @@ let addition = "5 not in [5, 2]" in
 let expected = ["(bool : (int : 5) not in (int[] : [(int : 5), (int : 2)]))"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
-(* let test_case = "Scans, parses, and generates the ast for the hello world program" in
-let program = "\
-def add(x: int, y: int) -> int:\r\n\
-\"\"\"\r\n
-this adds two integers\r\n
-\"\"\"\r\n
-\tsum: int\r\n
-\tsum = x + y\r\n
-\treturn sum\r\n
-print(add(x,y))\r\n" in
-let expected = ["def add(x: int, y: int) -> int:"; "sum: int"; "sum = x + y"; "return sum"; "print(add(x, y))"; "" ] in
-run_test ~debug:true test_case program expected;
-*)
+let test_case = "Semantically checks In operator" in
+let addition = "5 in [5, 2]" in
+let expected = ["(bool : (int : 5) in (int[] : [(int : 5), (int : 2)]))"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
+
+let test_case = "Semantically checks function definition" in
+let addition = "def add(x: int, y: int) -> int:\r\n
+\treturn y\r\n" in
+let expected = ["def add(x: int, y: int) -> int:"; "return (int : y)"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks Return" in
 let addition = "x: int = 5\n return x" in
 let expected = ["x: int(int : 5)"; "return (int : x)"; ""] in
-run_test ~debug:true test_case (addition ^ "\n") expected;
+run_test ~debug:false test_case (addition ^ "\n") expected;
+
+let test_case = "Semantically checks If Statement" in
+let comparing = "if True:\r\n
+\treturn 0\r\n
+elif False:\r\n
+\treturn 1\r\n
+else:\r\n
+\treturn 2\r\n" in
+let expected = ["if (bool : True):"; "return (int : 0)"; "else:"; "if (bool : False):"; "return (int : 1)"; "else:"; "return (int : 2)"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Semantically checks while loop" in
+let addition = "while True:\r\n
+\treturn 0\r\n" in
+let expected = ["while (bool : True):"; "return (int : 0)"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
+
+let test_case = "Semantically checks while loop" in
+let addition = "for x in [1, 2, 3]:\r\n
+\ty: int = 5\r\n
+\tbreak\r\n" in
+let expected = ["for x in (int[] : [(int : 1), (int : 2), (int : 3)]):"; "y: int(int : 5)"; "break"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
+
+let test_case = "Semantically checks print" in
+let addition = "print(\"string\")" in
+let expected = ["print((string : \"string\"))"; ""] in
+run_test ~debug:false test_case (addition ^ "\n") expected;
 
 (*
 Boiler plate set up for processing the results of the tests   

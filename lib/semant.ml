@@ -133,6 +133,19 @@ let rec check (program : program) : sprogram =
           | _ -> raise (Failure "Expect iterables")
         in
         sexpr
+    | In (e1, e2) ->
+        let t1, e1' = check_expr (decl_vars, decl_funcs, e1)
+        and t2, e2' = check_expr (decl_vars, decl_funcs, e2) in
+        let sexpr =
+          match t2 with
+          | Tuple | EmptyArray -> (Bool, SIn ((t1, e1'), (t2, e2')))
+          | Array (elem_typ, _) when elem_typ = t1 ->
+              (Bool, SIn ((t1, e1'), (t2, e2')))
+          | Array (elem_typ, _) when elem_typ != t1 ->
+              raise (Failure "Expect array's element type matches")
+          | _ -> raise (Failure "Expect iterables")
+        in
+        sexpr
     | Call (called_fname, args) ->
         let s_stmt =
           match find_func (decl_funcs, called_fname) with
@@ -147,7 +160,6 @@ let rec check (program : program) : sprogram =
           | _ -> raise (Failure "Expect function")
         in
         s_stmt
-    | _ -> raise (Failure "Semantically invalid expression")
   in
   let rec check_stmt
       ( (decl_vars : ('a, 'b) Hashtbl.t),
