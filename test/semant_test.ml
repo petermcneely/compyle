@@ -19,6 +19,7 @@ in
   
 let fail_test () =
   print_endline "\tOOPS";
+  assert false
 in
   
 let run_test ?(debug: bool = false) (test_case: string) (input: string) (expected: string list): unit =
