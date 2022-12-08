@@ -59,7 +59,7 @@ run_test ~debug:false test_case (addition ^ "\n") expected;
 Tests basic logical operators   
 *)
 let test_case = "Parses literals being compared" in
-let comparing = "8 > 5 and 3 < 9" in
+let comparing = "8 == 5 or 3 != 9" in
 let expected = [comparing; ""] in 
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
@@ -69,13 +69,77 @@ let expected = [comparing; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses tuples" in
-let comparing = "x: tuple\nx = (1, \"hello world\", True)" in
-let expected = ["x: tuple"; "x = (1, \"hello world\", True)"; ""] in
+let comparing = "x: tuple\nx = (1, \"hello world\", true)" in
+let expected = ["x: tuple"; "x = (1, \"hello world\", true)"; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses arrays" in
-let comparing = "x: int[]\nx = [1, 2, 3, 4, 5]" in
-let expected = ["x: int[]"; "x = [1, 2, 3, 4, 5]"; ""] in
+let comparing = "x: bool[]\nx = [True, False]" in
+let expected = ["x: bool[]"; "x = [True, False]"; ""] in
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Ints" in
+let comparing = "x: int\nx = 40" in
+let expected = ["x: int"; "x = 40"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Floats" in
+let comparing = "y: float\ny = 40.\ny = 40.40\ny = 40E3\ny = 40.3e-2" in
+let expected = ["y: float"; "y = 40."; "y = 40.4"; "y = 40000."; "y = 0.403"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Strings" in
+let comparing = "x: string\nx = \"Hello World\"" in
+let expected = ["x: string";"x = \"Hello World\""; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Bools" in
+let comparing = "x: bool\nx = True" in
+let expected = ["x: bool";"x = True"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Certain Math Operations" in
+let comparing = "4 + 0 - 9 * 4 / 10 % 6 ** 9 // 10" in
+let expected = [comparing; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Assign Operations" in
+let comparing = "x: int\nx //= 4" in
+let expected = ["x: int";"x //= 4"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses Not Operations" in
+let comparing = "not x" in
+let expected = ["not x"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses In/Not IN Operations" in
+let comparing = "True not in x" in
+let expected = ["True not in x"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses If Statements" in
+let comparing = "if x = 4:\r\n
+\ty = 5\r\n
+elif y = 6:\r\n
+\tz = 6\r\n
+else:\r\n
+\tq = 7\r\n" in
+let expected = ["if x = 4:"; "y = 5"; "else:"; "if y = 6:"; "z = 6"; "else:"; "q = 7"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses For Loop" in
+let comparing = "for x in [1, 2, 3]:\r\n
+\ty = 5\r\n
+\tbreak\r\n" in
+let expected = ["for x in [1, 2, 3]:"; "y = 5"; "break"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
+let test_case = "Parses While Loop" in
+let comparing = "while x > 5:\r\n
+\ty = 5\r\n
+\tcontinue\r\n" in
+let expected = ["while x > 5:"; "y = 5"; "continue"; ""] in 
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses multi-dimensional arrays" in
