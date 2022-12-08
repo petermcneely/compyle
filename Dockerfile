@@ -1,8 +1,6 @@
-FROM petermcneely/docker-ocaml:4.14
+FROM petermcneely/docker-ocaml:4.14-2
 
 WORKDIR /workspace
-
-RUN opam install dune
 
 COPY bin/ /workspace/bin/
 COPY lib/ /workspace/lib/
