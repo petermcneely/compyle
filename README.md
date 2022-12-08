@@ -1,12 +1,22 @@
 # Compyle
 Compiled Python for COMS W4115 Fall 2022
 
-TA: Weicheng Zhao (wz2578)
-Office Hours: Friday 9:30 - 11:30 AM ET
-Location: [Zoom](https://columbiauniversity.zoom.us/j/93494146149)
+|TA|Office Hours|Location|
+|---|---|---|
+|Weicheng Zhao (wz2578)|Friday 9:30 - 11:30 AM ET|[Zoom](https://columbiauniversity.zoom.us/j/93494146149)|
 
 ## Dune Dependency
 This project depends on dune. To install, run `opam install dune`.
+
+## LLVM Dependency
+This project depends on llvm version 14. To install, run the following:
+```
+> wget -O - https://apt.llvm.org/llvm.sh > llvm.sh
+> sed 's/CURRENT_LLVM_STABLE=15/CURRENT_LLVM_STABLE=14/' llvm.sh > llvm-14.sh
+> chmod +x llvm-14.sh
+> ./llvm-14.sh
+> opam install llvm
+```
 
 ## Makefile
 Run `make` to clean, build, test, and check the successful test percentage. 
