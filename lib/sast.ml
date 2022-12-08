@@ -34,6 +34,15 @@ type sstmt =
 
 type sprogram = sstmt list
 
+type sfunc_def = {
+  
+  srtyp: typ;
+  sfname: string;
+  sformals: bind list;
+  slocals: bind list;
+  sbody: sstmt list;
+}
+
 (* Pretty-printing functions *)
 let rec string_of_sexpr (t, e) =
   "(" ^ string_of_typ t ^ " : "

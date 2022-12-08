@@ -1,6 +1,9 @@
 (library
  (name compyle)
- (modules lexing_stack ast sast semant parser scanner)
+ (modules lexing_stack ast sast semant parser scanner irgen)
+ (libraries
+   llvm
+ )
 )
 (ocamllex scanner)
 (ocamlyacc parser)

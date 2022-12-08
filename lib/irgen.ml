@@ -1,15 +1,10 @@
 (* IR generation: translate takes a semantically checked AST and
    produces LLVM IR
-
    LLVM tutorial: Make sure to read the OCaml version of the tutorial
-
    http://llvm.org/docs/tutorial/index.html
-
    Detailed documentation on the OCaml LLVM library:
-
    http://llvm.moe/
    http://llvm.moe/ocaml/
-
 *)
 
 module L = Llvm
@@ -154,7 +149,7 @@ let translate (globals, functions) =
 
         let loop_bb = L.append_block context "loop" the_function in
         ignore (List.fold_left build_stmt (L.builder_at_end context loop_bb) sl);
-        
+
         let end_bb = L.append_block context "loop_end" the_function in
         let build_br_exit = L.build_br end_bb in
         add_terminal(L.builder_at_end context loop_bb) build_br_end;
