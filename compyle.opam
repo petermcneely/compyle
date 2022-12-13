@@ -9,6 +9,8 @@ bug-reports: "https://github.com/petermcneely/compyle/issues"
 depends: [
   "ocaml"
   "dune" {>= "3.4"}
+  "llvm"
+  "llvm.analysis"
   "odoc" {with-doc}
 ]
 build: [

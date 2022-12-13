@@ -13,8 +13,7 @@
  (name compyle)
  (synopsis "A small, compiled language with Python-like syntax")
  (description "A small, compiled language with Python-like syntax")
- (depends ocaml dune)
- (tags
-  ("plt")))
+ (depends ocaml dune llvm llvm.analysis)
+ (tags ("plt")))
 
 ; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
