@@ -17,17 +17,22 @@ let translate (sprogram : sprogram) =
   (* Each module consists of functions, global vars and symbol table entries*)
   (* in each function, it also contains basic blocks with error codes *)
   let the_module = L.create_module context "compyle" in
+  (* Get types from the context *)
+  let i32_t      = L.i32_type    context
+  and i8_t       = L.i8_type context 
+  and f32_t      = L.float_type  context
+  and i1_t       = L.i1_type     context in
   (* More should be filled in here *)
   let rec build_IR_on_expr builder ((_, e) : sexpr) =
     match e with
-    | SIntLit _ -> raise (Failure " Unimplemented")
-    | SFloatLit _ -> raise (Failure " Unimplemented")
-    | SStringLit _ -> raise (Failure " Unimplemented")
-    | SBoolLit _ -> raise (Failure " Unimplemented")
+    | SIntLit i -> L.const_int i32_t i 
+    | SFloatLit i -> L.const_float f32_t i
+    | SStringLit s -> L.const_string context s
+    | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
     | SArrayLit _ -> raise (Failure " Unimplemented")
     | STupleLit _ -> raise (Failure " Unimplemented")
     | SBinop (_, _, _) -> raise (Failure " Unimplemented")
-    | SId _ -> raise (Failure " Unimplemented")
+    | SId s -> raise (Failure "Unimplemented")
     | SAsn (_, _) -> raise (Failure " Unimplemented")
     | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
     | SNot _ -> raise (Failure " Unimplemented")
