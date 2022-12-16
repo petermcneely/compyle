@@ -6,6 +6,8 @@ module L = Llvm (* LLVM module *)
 module A = Ast (* Written by us *)
 open Sast
 
+module StringMap = Map.Make(String)
+
 (* translate : Sast.program -> Llvm.module *)
 (* Sast.program is a tuple of globals (vars) and functions *)
 let translate (sprogram : sprogram) =
@@ -22,6 +24,27 @@ let translate (sprogram : sprogram) =
   and i8_t       = L.i8_type context 
   and f32_t      = L.float_type  context
   and i1_t       = L.i1_type     context in
+
+  (* Return the LLVM type for a MicroC type *)
+  let ltype_of_typ = function
+      A.Int   -> i32_t
+    | A.Bool  -> i1_t
+    | A.Float -> f32_t
+    | _ -> raise (Failure "Unimplemented")
+  in
+
+  let func_declarations : (L.llvalue * sstmt) StringMap.t = 
+    let func_decl m sstmt = 
+      match sstmt with 
+      | SFunction(fname, formals, rtyp, _) -> 
+        let name = fname  
+        and formal_types = 
+          Array.of_list (List.map (fun (_, t) -> ltype_of_typ t) formals)  
+        in let ftype = L.function_type (ltype_of_typ rtyp) formal_types in
+        StringMap.add name (L.define_function name ftype the_module, sstmt) m
+      | _ -> m in  
+    List.fold_left func_decl StringMap.empty sprogram  
+
   (* More should be filled in here *)
   let rec build_IR_on_expr builder ((_, e) : sexpr) =
     match e with
@@ -44,17 +67,53 @@ let translate (sprogram : sprogram) =
     (* match sstmt*)
     | SBreak -> raise (Failure "Unimplemented")
     | SContinue -> raise (Failure "Unimplemented")
-    | SExpr _ -> raise (Failure "Unimplemented")
+    | SExpr e -> 
+      build_IR_on_expr e 
     | SFunction (_, _, _, _) -> raise (Failure "Unimplemented")
-    | SReturn _ -> raise (Failure "Unimplemented")
-    | SIf (_, _, _) -> raise (Failure "Unimplemented")
+    | SReturn e -> 
+      (* 
+        e.code || 
+        L.build_ret 
+      *)
+      let expr_addr = build_IR_on_expr builder e in 
+      builder 
+      (*ignore(L.build_ret expr_addr builder); builder*)
+    | SIf (pred, stmt1, stmt2) -> 
+      let expr_addr = build_IR_on_expr builder pred in 
+
+      let then_bb = L.append_block context "then" the_function in 
+      let else_bb = L.append_block context "else" the_function in 
+
+      ignore(L.build_cond_br expr_addr then_bb else_bb builder);
+      
+      let then_builder = L.builder_at_end context then_bb in 
+
+      (*
+        then:    
+
+      *)
+      build_IR_on_stmt_list builder stmt1 
+
+      
+      raise (Failure "Unimplemented")
     | SWhile (_, _) -> raise (Failure "Unimplemented")
-    | SFor (_, _, _) -> raise (Failure "Unimplemented")
+    | SFor (st, expr, stmts) -> raise (Failure "Unimplemented")
+    (* 
+       for i in [1. 2. 3]
+       st index, 0 
+       st val, expr[index]
+    *)
+
+
     | SPrint _ -> raise (Failure "Unimplemented")
     | SDecl (_, _, _) -> raise (Failure "Unimplemented")
+  and 
+  build_IR_on_stmt_list builder sl = 
+      List.fold_left build_IR_on_stmt builder sl 
   in
   (* Unsure the usage of L.builder here but it helps compile for now*)
-  List.iter (build_IR_on_stmt L.builder) sprogram;
+  List.map (build_IR_on_stmt L.builder) sprogram;
+
   (* the_module is a mutable ptr *)
   the_module
 (* return Llvm.module *)
