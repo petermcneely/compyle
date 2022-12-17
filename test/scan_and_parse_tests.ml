@@ -156,7 +156,7 @@ let test_case = "Parses nonetype function call" in
 let comparing = "def foo() -> None:\r\n
 \tprint(\"foo\")\r\n" in
 let expected = ["def foo() -> None:"; "print(\"foo\")"; ""] in
-run_test ~debug:true test_case (comparing ^ "\n") expected;
+run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 (*
 Boiler plate set up for processing the results of the tests   
