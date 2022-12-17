@@ -193,32 +193,35 @@ let addition = "def foo() -> None:\r\n
 let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
+
+let test_case = "Semantically checks assignment to nonetype" in
+let addition = "def foo() -> None:\r\n
+\tprint(\"foo\")\r\n
+x: int\r\n
+x = foo()\r\n" in
+let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
 try
-  let test_case = "Semantically checks assignment to nonetype" in
-  let addition = "def foo() -> None:\r\n
-  \tprint(\"foo\")\r\n
-  x: int\r\n
-  x = foo()\r\n" in
-  let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
   run_test ~debug:false test_case (addition ^ "\n") expected;
 with Failure e -> pass_test();
 
+
+let test_case = "Semantically checks augmented assignment to nonetype" in
+let addition = "def foo() -> None:\r\n
+\tprint(\"foo\")\r\n
+x: int = 4\r\n
+x += foo()\r\n" in
+let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
 try
-  let test_case = "Semantically checks augmented assignment to nonetype" in
-  let addition = "def foo() -> None:\r\n
-  \tprint(\"foo\")\r\n
-  x: int = 4\r\n
-  x += foo()\r\n" in
-  let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
   run_test ~debug:false test_case (addition ^ "\n") expected;
 with Failure e -> pass_test();
 
+
+let test_case = "Semantically checks declaration to nonetype" in
+let addition = "def foo() -> None:\r\n
+\tprint(\"foo\")\r\n
+x: int = foo()\r\n" in
+let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
 try
-  let test_case = "Semantically checks declaration to nonetype" in
-  let addition = "def foo() -> None:\r\n
-  \tprint(\"foo\")\r\n
-  x: int = foo()\r\n" in
-  let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
   run_test ~debug:false test_case (addition ^ "\n") expected;
 with Failure e -> pass_test();
 (*
