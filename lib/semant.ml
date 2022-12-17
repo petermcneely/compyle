@@ -220,4 +220,24 @@ let rec check (program : program) : sprogram =
   let check_stmt_with_decls st =
     check_stmt (var_decls_global, func_decls_global, st)
   in
-  List.map check_stmt_with_decls program
+  let checked_program = List.map check_stmt_with_decls program in
+
+  (* print_string ("length of sprogram statements: " ^ (string_of_int (List.length checked_program))); *)
+  (* List.iter (fun sstmt -> (print_string ("BEGIN DEBUG\r\n" ^ (string_of_sstmt sstmt) ^ "\r\nEND DEBUG\r\n"))) checked_program; *)
+
+  let check_top_level_stmt sstmt =
+    match sstmt with
+    | SFunction _ -> sstmt
+    | SDecl (id, t, expr_opt) ->
+      (
+        match expr_opt with
+          | None -> sstmt
+          | Some sexpr ->
+            (
+              match snd sexpr with
+                | SIntLit _ | SBoolLit _ | SFloatLit _ | SStringLit _ -> sstmt
+                | _ -> raise (Failure ("Global variables can only be assigned to constant literals. Received: " ^ string_of_sstmt sstmt))
+            )
+      )
+    | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt)) in
+  checked_program
