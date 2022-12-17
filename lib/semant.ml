@@ -2,7 +2,7 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 
-let rec check (program : program) : sprogram =
+let rec check ?(top_level: bool = true) (program : program) : sprogram =
   (* in-place mutation *)
   let var_decls_global = Hashtbl.create 100 in
   let func_decls_global = Hashtbl.create 100 in
@@ -112,12 +112,14 @@ let rec check (program : program) : sprogram =
     | Asn (var, e) ->
         let t = find_var_type (decl_vars, var) 
         and t', e' = check_expr (decl_vars, decl_funcs, e) in
-        if t = t' then (t, SAsn (var, (t', e'))) 
+        if t' = NoneType then raise (Failure "Cannot assign variable to nonetype")
+        else if t = t' then (t, SAsn (var, (t', e')))
         else raise (Failure "Incompatible type")
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type (decl_vars, var)
         and t2, e' = check_expr (decl_vars, decl_funcs, e) in
-        if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
+        if t2 = NoneType then raise (Failure "Cannot assign variable to nonetype")
+        else if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
         else raise (Failure "Incompatible type")
     | Not e ->
         let t, e' = check_expr (decl_vars, decl_funcs, e) in
@@ -167,12 +169,14 @@ let rec check (program : program) : sprogram =
   let rec check_stmt
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
-        (stmt : stmt) ) : sstmt =
+        (stmt : stmt),
+        (top_level: bool) ) : sstmt =
     match stmt with
     | Break -> SBreak
     | Continue -> SContinue
     | Expr e -> SExpr (check_expr (decl_vars, decl_funcs, e))
     | Function (fname, params, rtyp, fbody) ->
+        if top_level = false then raise (Failure ("Nested function definitions are not allowed. Received a definition for a function named: " ^ fname));
         add_func (decl_vars, decl_funcs, Function (fname, params, rtyp, fbody));
         let decl_vars_in_scope = Hashtbl.copy decl_vars in
         let decl_funcs_in_scope = Hashtbl.copy decl_funcs in
@@ -181,20 +185,20 @@ let rec check (program : program) : sprogram =
         in
         List.iter add_var2 params;
         let check_stmt_with_decls st =
-          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st)
+          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st, false)
         in
         let s_fbody = List.map check_stmt_with_decls fbody in
         SFunction (fname, params, rtyp, s_fbody)
     | Return e -> SReturn (check_expr (decl_vars, decl_funcs, e))
     | If (e, if_block, else_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_if_block = check if_block
-        and s_else_block = check else_block in
+        and s_if_block = check ~top_level:false if_block
+        and s_else_block = check ~top_level:false else_block in
         if t = Bool then SIf ((t, e'), s_if_block, s_else_block)
         else raise (Failure "Expect boolean expression")
     | While (e, while_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_while_block = check while_block in
+        and s_while_block = check ~top_level:false while_block in
         if t = Bool then SWhile ((t, e'), s_while_block)
         else raise (Failure "Expect boolean expression")
     | For (id, e, for_block) ->
@@ -203,7 +207,7 @@ let rec check (program : program) : sprogram =
           match t with
           | Array (array_elem_typ, _) ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
-              SFor (id, (t, e'), check for_block)
+              SFor (id, (t, e'), check ~top_level:false for_block)
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
@@ -221,7 +225,35 @@ let rec check (program : program) : sprogram =
         SDecl (id, t, some_sexpr)
   in
   let check_stmt_with_decls st =
-    check_stmt (var_decls_global, func_decls_global, st)
+    check_stmt (var_decls_global, func_decls_global, st, top_level)
   in
-  let _ = find_func (func_decls_global, "main") in (* check if main function is defined *)
-  List.map check_stmt_with_decls program
+  let checked_program = List.map check_stmt_with_decls program in
+
+  if top_level then
+    let main_stmt = find_func (func_decls_global, "main") in (* check if main function is defined *)
+    
+    let _ = match main_stmt with
+      | Function (fname, params, rtyp, fbody) -> if (((List.length params) > 0) || (rtyp != Int)) then
+          raise (Failure "The main function should take zero arguments and return an int")
+      | _ -> raise (Failure "Developer error") in
+
+    let check_top_level_stmt sstmt =
+      match sstmt with
+      | SFunction _ -> sstmt
+      | SDecl (id, t, expr_opt) ->
+        (
+          match expr_opt with
+            | None -> sstmt
+            | Some sexpr ->
+              (
+                match snd sexpr with
+                  | SIntLit _ | SBoolLit _ | SFloatLit _ | SStringLit _ -> sstmt
+                  | _ -> raise (Failure ("Global variables can only be assigned to constant literals. Received: " ^ string_of_sstmt sstmt))
+              )
+        )
+      | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt))
+    in
+
+    List.map check_top_level_stmt checked_program
+  else
+    checked_program
