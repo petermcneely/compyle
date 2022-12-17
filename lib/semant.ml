@@ -225,7 +225,6 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
   let check_stmt_with_decls st =
     check_stmt (var_decls_global, func_decls_global, st)
   in
-  let _ = find_func (func_decls_global, "main") in (* check if main function is defined *)
   let checked_program = List.map check_stmt_with_decls program in
 
   let check_top_level_stmt sstmt =
@@ -246,6 +245,7 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
   in
 
   if top_level then
+    let _ = find_func (func_decls_global, "main") in (* check if main function is defined *)
     List.map check_top_level_stmt checked_program
   else
     checked_program
