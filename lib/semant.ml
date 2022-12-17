@@ -23,8 +23,11 @@ let rec check (program : program) : sprogram =
   in
   let find_func ((decl_funcs : ('a, 'c) Hashtbl.t), (fname : string)) : stmt =
     try Hashtbl.find decl_funcs fname
-    with Not_found -> raise (Failure ("Unbound function " ^ fname))
+    with Not_found -> 
+      if (fname = "main") then raise (Failure ("main function required but not defined")) 
+      else raise (Failure ("Unbound function " ^ fname))
   in
+
   let add_var
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
@@ -220,4 +223,5 @@ let rec check (program : program) : sprogram =
   let check_stmt_with_decls st =
     check_stmt (var_decls_global, func_decls_global, st)
   in
+  let _ = find_func (func_decls_global, "main") in (* check if main function is defined *)
   List.map check_stmt_with_decls program

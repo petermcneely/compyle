@@ -69,7 +69,11 @@ let translate (sprogram : sprogram) =
     | SContinue -> raise (Failure "Unimplemented")
     | SExpr e -> 
       ignore(build_IR_on_expr builder e); builder
-    | SFunction (name, formals, _, _) -> raise (Failure "Unimplemented")
+    | SFunction (name, formals, rtyp, sl) -> 
+      let (the_function, _) = StringMap.find name func_declarations in 
+      let builder = L.builder_at_end context (L.entry_block the_function) in 
+      build_IR_on_stmt_list builder sl 
+
     | SReturn e -> 
       (* 
         e.code || 
