@@ -230,7 +230,12 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
   let checked_program = List.map check_stmt_with_decls program in
 
   if top_level then
-    let _ = find_func (func_decls_global, "main") in (* check if main function is defined *)
+    let main_stmt = find_func (func_decls_global, "main") in (* check if main function is defined *)
+    
+    let _ = match main_stmt with
+      | Function (fname, params, rtyp, fbody) -> if (((List.length params) > 0) || (rtyp != Int)) then
+          raise (Failure "The main function should take zero arguments and return an int")
+      | _ -> raise (Failure "Developer error") in
 
     let check_top_level_stmt sstmt =
       match sstmt with

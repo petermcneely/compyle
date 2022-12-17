@@ -231,6 +231,20 @@ try
   run_test ~debug:true test_case (actual ^ "\n") [];
 with Failure e when e = "Nested function definitions are not allowed. Received a definition for a function named: foo" -> pass_test();
 
+let test_case = "Enforces that main should have zero parameters" in
+let actual = "def main(x: int) -> int:\r\n\
+\treturn 0\r\n" in
+try
+  run_test ~debug:false test_case (actual ^ "\n") [];
+with Failure e when e = "The main function should take zero arguments and return an int" -> pass_test();
+
+let test_case = "Enforces that main should return an int" in
+let actual = "def main() -> bool:\r\n\
+\treturn True\r\n" in
+try
+  run_test ~debug:false test_case (actual ^ "\n") [];
+with Failure e when e = "The main function should take zero arguments and return an int" -> pass_test();
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)
