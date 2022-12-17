@@ -169,12 +169,14 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
   let rec check_stmt
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
-        (stmt : stmt) ) : sstmt =
+        (stmt : stmt),
+        (top_level: bool) ) : sstmt =
     match stmt with
     | Break -> SBreak
     | Continue -> SContinue
     | Expr e -> SExpr (check_expr (decl_vars, decl_funcs, e))
     | Function (fname, params, rtyp, fbody) ->
+        if top_level = false then raise (Failure ("Nested function definitions are not allowed. Received a definition for a function named: " ^ fname));
         add_func (decl_vars, decl_funcs, Function (fname, params, rtyp, fbody));
         let decl_vars_in_scope = Hashtbl.copy decl_vars in
         let decl_funcs_in_scope = Hashtbl.copy decl_funcs in
@@ -183,7 +185,7 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         in
         List.iter add_var2 params;
         let check_stmt_with_decls st =
-          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st)
+          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st, false)
         in
         let s_fbody = List.map check_stmt_with_decls fbody in
         SFunction (fname, params, rtyp, s_fbody)
@@ -223,29 +225,30 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         SDecl (id, t, some_sexpr)
   in
   let check_stmt_with_decls st =
-    check_stmt (var_decls_global, func_decls_global, st)
+    check_stmt (var_decls_global, func_decls_global, st, top_level)
   in
   let checked_program = List.map check_stmt_with_decls program in
 
-  let check_top_level_stmt sstmt =
-    match sstmt with
-    | SFunction _ -> sstmt
-    | SDecl (id, t, expr_opt) ->
-      (
-        match expr_opt with
-          | None -> sstmt
-          | Some sexpr ->
-            (
-              match snd sexpr with
-                | SIntLit _ | SBoolLit _ | SFloatLit _ | SStringLit _ -> sstmt
-                | _ -> raise (Failure ("Global variables can only be assigned to constant literals. Received: " ^ string_of_sstmt sstmt))
-            )
-      )
-    | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt))
-  in
-
   if top_level then
     let _ = find_func (func_decls_global, "main") in (* check if main function is defined *)
+
+    let check_top_level_stmt sstmt =
+      match sstmt with
+      | SFunction _ -> sstmt
+      | SDecl (id, t, expr_opt) ->
+        (
+          match expr_opt with
+            | None -> sstmt
+            | Some sexpr ->
+              (
+                match snd sexpr with
+                  | SIntLit _ | SBoolLit _ | SFloatLit _ | SStringLit _ -> sstmt
+                  | _ -> raise (Failure ("Global variables can only be assigned to constant literals. Received: " ^ string_of_sstmt sstmt))
+              )
+        )
+      | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt))
+    in
+
     List.map check_top_level_stmt checked_program
   else
     checked_program

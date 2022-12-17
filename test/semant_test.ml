@@ -221,6 +221,16 @@ def main() -> int:\r\n\
 try
   run_test ~debug:false test_case (addition ^ "\n") [];
 with Failure e when e = "Incompatible type. Expected Var type:int Received expression type: None" -> pass_test();
+
+let test_case = "Prevents nested function definitions" in
+let actual = "def main() -> int:\r\n\
+\tdef foo() -> None:\r\n\
+\t\tprint(\"yay\")\r\n\
+\treturn 0\r\n" in
+try
+  run_test ~debug:true test_case (actual ^ "\n") [];
+with Failure e when e = "Nested function definitions are not allowed. Received a definition for a function named: foo" -> pass_test();
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)
