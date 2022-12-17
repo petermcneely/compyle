@@ -92,22 +92,57 @@ let translate (sprogram : sprogram) =
           if (x > 8):
           else:
         
-        F1: 
+        If(e, s1, s2)
+        F1:
+          e.code 
+          cond_br e.addr IF ELSE
           IF: 
-            -> builder
+            s1.code 
+            jmp END 
           ELSE:
+            s2.code 
+            jmp END 
+          END:
       *)
 
       let then_bb = L.append_block context "then" the_function in 
       let else_bb = L.append_block context "else" the_function in 
+      let end_bb = L.append_block context "end_if" in
 
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
       let then_builder = L.builder_at_end context then_bb in 
+      ignore(build_IR_on_stmt_list then_builder stmt1);
 
-      build_IR_on_stmt_list builder stmt1 
+      let else_builder = L.builder_at_end context else_bb in 
+      ignore(build_IR_on_stmt_list else_builder stmt2);
 
-    | SWhile (_, _) -> raise (Failure "Unimplemented")
+      ignore(L.build_br then_bb then_builder);
+      ignore(L.build_br else_bb else_builder);  
+
+      builder
+
+    | SWhile (e, sl) -> 
+      (*
+      FNAME:
+        jmp COND   
+        COND: 
+          e.code
+          br_cond e.addr BODY END 
+        BODY: 
+          sl.code
+          jmp COND 
+        END: 
+      *)
+
+      (* TODO: Create three blocks: COND, BODY, END*)
+      let the_function = L.block_parent (L.insertion_block builder) in 
+
+      let cond_bb = L.append_block context "cond" the_function in 
+      let body_bb = L.append_block context "body" the_function in 
+      let end_bb = L.append_block context "end" in 
+      builder 
+      
     | SFor (st, expr, stmts) -> raise (Failure "Unimplemented")
     (* 
        for i in [1. 2. 3]

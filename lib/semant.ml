@@ -110,9 +110,9 @@ let rec check (program : program) : sprogram =
         else raise (Failure "Incompatible operands")
     | Id var -> (find_var_type (decl_vars, var), SId var)
     | Asn (var, e) ->
-        let t = find_var_type (decl_vars, var)
+        let t = find_var_type (decl_vars, var) 
         and t', e' = check_expr (decl_vars, decl_funcs, e) in
-        if t = t' then (t, SAsn (var, (t', e')))
+        if t = t' then (t, SAsn (var, (t', e'))) 
         else raise (Failure "Incompatible type")
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type (decl_vars, var)
