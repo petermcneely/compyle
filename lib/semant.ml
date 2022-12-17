@@ -2,7 +2,7 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 
-let rec check (program : program) : sprogram =
+let rec check ?(top_level: bool = true) (program : program) : sprogram =
   (* in-place mutation *)
   let var_decls_global = Hashtbl.create 100 in
   let func_decls_global = Hashtbl.create 100 in
@@ -185,13 +185,13 @@ let rec check (program : program) : sprogram =
     | Return e -> SReturn (check_expr (decl_vars, decl_funcs, e))
     | If (e, if_block, else_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_if_block = check if_block
-        and s_else_block = check else_block in
+        and s_if_block = check ~top_level:false if_block
+        and s_else_block = check ~top_level:false else_block in
         if t = Bool then SIf ((t, e'), s_if_block, s_else_block)
         else raise (Failure "Expect boolean expression")
     | While (e, while_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_while_block = check while_block in
+        and s_while_block = check ~top_level:false while_block in
         if t = Bool then SWhile ((t, e'), s_while_block)
         else raise (Failure "Expect boolean expression")
     | For (id, e, for_block) ->
@@ -200,7 +200,7 @@ let rec check (program : program) : sprogram =
           match t with
           | Array (array_elem_typ, _) ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
-              SFor (id, (t, e'), check for_block)
+              SFor (id, (t, e'), check ~top_level:false for_block)
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
@@ -222,9 +222,6 @@ let rec check (program : program) : sprogram =
   in
   let checked_program = List.map check_stmt_with_decls program in
 
-  (* print_string ("length of sprogram statements: " ^ (string_of_int (List.length checked_program))); *)
-  (* List.iter (fun sstmt -> (print_string ("BEGIN DEBUG\r\n" ^ (string_of_sstmt sstmt) ^ "\r\nEND DEBUG\r\n"))) checked_program; *)
-
   let check_top_level_stmt sstmt =
     match sstmt with
     | SFunction _ -> sstmt
@@ -239,5 +236,10 @@ let rec check (program : program) : sprogram =
                 | _ -> raise (Failure ("Global variables can only be assigned to constant literals. Received: " ^ string_of_sstmt sstmt))
             )
       )
-    | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt)) in
-  checked_program
+    | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt))
+  in
+
+  if top_level then
+    List.map check_top_level_stmt checked_program
+  else
+    checked_program

@@ -154,28 +154,26 @@ let actual = build_main "5 in [5, 2]" in
 let expected = build_expected_main ["(bool : (int : 5) in (int[] : [(int : 5), (int : 2)]))"] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
-(* let test_case = "Semantically checks If Statement" in
-let comparing = "def main() -> int:
-\tif True:\r\n
-\t\treturn 0\r\n
-\telif False:\r\n
-\t\treturn 1\r\n
-\telse:\r\n
+let test_case = "Semantically checks If Statement" in
+let comparing = "def main() -> int:\r\n\
+\tif True:\r\n\
+\t\treturn 0\r\n\
+\telif False:\r\n\
+\t\treturn 1\r\n\
+\telse:\r\n\
 \t\treturn 2\r\n" in
-print_string comparing;
-let expected = ["def main() -> int:"; "if (bool : True):"; "return (int : 0)"; "else:"; "if (bool : False):"; "return (int : 1)"; "else:"; "return (int : 2)"] in 
-run_test ~debug:true test_case (comparing ^ "\n") expected; *)
+let expected = ["def main() -> int:"; "if (bool : True):"; "return (int : 0)"; "else:"; "if (bool : False):"; "return (int : 1)"; "else:"; "return (int : 2)"; ""] in 
+run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Semantically checks while loop" in
 let actual = build_main "while True:\r\n\t\treturn 11" in
-print_string ("BEGIN ACTUAL\r\n" ^ actual ^ "\r\nEND ACTUAL\r\n");
-let expected = build_expected_main ["while (bool : True):"; "return (int : 11)"; "return (int : 0)"] in
+let expected = build_expected_main ["while (bool : True):"; "return (int : 11)"] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
-let test_case = "Semantically checks while loop" in
-let actual = build_main "for x in [1, 2, 3]:\r\n
-\ty: int = 5\r\n
-\tbreak\r\n" in
+let test_case = "Semantically checks for loop" in
+let actual = build_main "for x in [1, 2, 3]:\r\n\
+\t\ty: int = 5\r\n\
+\t\tbreak" in
 let expected = build_expected_main ["for x in (int[] : [(int : 1), (int : 2), (int : 3)]):"; "y: int(int : 5)"; "break"] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
