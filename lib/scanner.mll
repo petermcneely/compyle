@@ -155,7 +155,7 @@ and code manager = parse
 | "bool"                                                    { BOOL }
 | "float"                                                   { FLOAT }
 | "string"                                                  { STRING }
-| "nonetype"                                                { NONETYPE }
+| "None"                                                    { NONETYPE }
 | lexeme as l                                               { ID(l) }
 | digit+ as i                                               { INT_LITERAL(int_of_string i) } 
 | float as f                                                { FLOAT_LITERAL(float_of_string f)}

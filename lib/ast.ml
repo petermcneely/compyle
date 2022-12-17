@@ -82,7 +82,7 @@ let rec string_of_typ = function
   | Bool -> "bool"
   | Float -> "float"
   | String -> "string"
-  | NoneType -> "nonetype"
+  | NoneType -> "None"
   | Tuple -> "tuple"
   | EmptyArray -> "[]"
   | Array (t, dimensions) -> string_of_typ t ^ string_of_dimensions dimensions

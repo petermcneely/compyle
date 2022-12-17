@@ -188,9 +188,9 @@ let expected = ["print((string : \"string\"))"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 let test_case = "Semantically checks nonetype function call" in
-let addition = "def foo() -> nonetype:\r\n
+let addition = "def foo() -> None:\r\n
 \tprint(\"foo\")\r\n" in
-let expected = ["def foo() -> nonetype:"; "print((string : \"foo\"))"; ""] in
+let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
 run_test ~debug:true test_case (addition ^ "\n") expected;
 
 (*
