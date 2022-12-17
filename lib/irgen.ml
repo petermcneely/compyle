@@ -45,6 +45,20 @@ let translate (sprogram : sprogram) =
       | _ -> m in  
     List.fold_left func_decl StringMap.empty sprogram  
   in 
+  (* LLVM insists each basic block end with exactly one "terminator"
+  instruction that transfers control.  This function runs "instr builder"
+  if the current block does not already have a terminator.  Used,
+  e.g., to handle the "fall off the end of the function" case. *)
+  let add_terminal builder instr =
+    match L.block_terminator (L.insertion_block builder) with
+      Some _ -> ()
+    | None -> ignore (instr builder) in
+  
+  (* Given a function name, get the builder to that function *)  
+  let get_function_builder name = 
+    let (the_function, _) = StringMap.find name func_declarations in 
+    L.builder_at_end context (L.entry_block the_function)
+
   (* More should be filled in here *)
   let rec build_IR_on_expr builder ((_, e) : sexpr) =
     match e with
@@ -70,9 +84,13 @@ let translate (sprogram : sprogram) =
     | SExpr e -> 
       ignore(build_IR_on_expr builder e); builder
     | SFunction (name, formals, rtyp, sl) -> 
-      let (the_function, _) = StringMap.find name func_declarations in 
-      let builder = L.builder_at_end context (L.entry_block the_function) in 
-      build_IR_on_stmt_list builder sl 
+      let f_builder = get_function_builder name in  
+      (*
+        FNAME: 
+        -> builder   
+      *)
+
+      build_IR_on_stmt_list f_builder sl 
 
     | SReturn e -> 
       (* 
@@ -93,11 +111,11 @@ let translate (sprogram : sprogram) =
           else:
         
         If(e, s1, s2)
-        F1:
+        F1: <- the_function 
           e.code 
           cond_br e.addr IF ELSE
           IF: 
-            s1.code 
+            s1.code  <- builder
             jmp END 
           ELSE:
             s2.code 
@@ -117,11 +135,11 @@ let translate (sprogram : sprogram) =
       let else_builder = L.builder_at_end context else_bb in 
       ignore(build_IR_on_stmt_list else_builder stmt2);
 
-      ignore(L.build_br then_bb then_builder);
-      ignore(L.build_br else_bb else_builder);  
+      let build_br_end = L.build_br end_bb in (* partial function *)
+      add_terminal (L.builder_at_end context then_bb) build_br_end;
+      add_terminal (L.builder_at_end context else_bb) build_br_end;
 
-      builder
-
+      L.builder_at_end context end_bb 
     | SWhile (e, sl) -> 
       (*
       FNAME:
@@ -141,6 +159,16 @@ let translate (sprogram : sprogram) =
       let cond_bb = L.append_block context "cond" the_function in 
       let body_bb = L.append_block context "body" the_function in 
       let end_bb = L.append_block context "end" in 
+
+      let cond_builder = L.builder_at_end context cond_bb in 
+      let expr_addr = build_IR_on_expr cond_builder e in  
+      
+      L.build_cond_br e 
+
+      let body_builder = L.builder_at_end context body_bb in 
+      let body_builder = build_IR_on_stmt_list body_builder sl in 
+
+      
       builder 
       
     | SFor (st, expr, stmts) -> raise (Failure "Unimplemented")
