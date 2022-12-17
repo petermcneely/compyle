@@ -112,12 +112,14 @@ let rec check (program : program) : sprogram =
     | Asn (var, e) ->
         let t = find_var_type (decl_vars, var)
         and t', e' = check_expr (decl_vars, decl_funcs, e) in
-        if t = t' then (t, SAsn (var, (t', e')))
+        if t' = NoneType then raise (Failure "Cannot assign variable to nonetype")
+        else if t = t' then (t, SAsn (var, (t', e')))
         else raise (Failure "Incompatible type")
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type (decl_vars, var)
         and t2, e' = check_expr (decl_vars, decl_funcs, e) in
-        if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
+        if t2 = NoneType then raise (Failure "Cannot assign variable to nonetype")
+        else if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
         else raise (Failure "Incompatible type")
     | Not e ->
         let t, e' = check_expr (decl_vars, decl_funcs, e) in

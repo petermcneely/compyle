@@ -1,4 +1,4 @@
-type typ = Int | Bool | Float | String | Tuple | Array of typ * int | EmptyArray
+type typ = Int | Bool | Float | String | Tuple | Array of typ * int | EmptyArray | NoneType
 type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp | AAFDiv
 
 type bin_op =
@@ -82,6 +82,7 @@ let rec string_of_typ = function
   | Bool -> "bool"
   | Float -> "float"
   | String -> "string"
+  | NoneType -> "None"
   | Tuple -> "tuple"
   | EmptyArray -> "[]"
   | Array (t, dimensions) -> string_of_typ t ^ string_of_dimensions dimensions
