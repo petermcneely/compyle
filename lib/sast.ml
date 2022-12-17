@@ -32,6 +32,9 @@ type sstmt =
   | SPrint of sexpr
   | SDecl of string * typ * sexpr option
 
+type sstmt_list = 
+| SSTMT_LIST of sstmt list 
+
 type sprogram = sstmt list
 
 (* Pretty-printing functions *)
