@@ -158,6 +158,14 @@ let comparing = "def foo() -> None:\r\n
 let expected = ["def foo() -> None:"; "print(\"foo\")"; ""] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
+let test_case = "Parses negative ints and floats" in
+let comparing = "a: int = -3
+b: float = -3.0
+c: int = 3 - -1
+d: float = -3.0 - -3.0" in
+let expected = ["a: int = -3"; "b: float = -3."; "c: int = 3 - -1"; "d: float = -3. - -3."; ""] in
+run_test ~debug:false test_case (comparing ^ "\n") expected;
+
 (*
 Boiler plate set up for processing the results of the tests   
 *)
