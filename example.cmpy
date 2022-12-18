@@ -1,7 +1,5 @@
-def add(x: int, y: int) -> int:
-"""
-This method adds two integers together
-"""
-	sum: int = x + y
-	return sum
-print(add(1, 2))
+def main() -> int:
+	if True:
+		return 0
+	else:
+		return 2

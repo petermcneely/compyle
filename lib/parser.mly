@@ -14,7 +14,7 @@ open Ast
 %token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN EXP_ASSIGN FDIV_ASSIGN
 %token EQ NEQ GT LT GEQ LEQ
 %token AND OR NOT
-%token INT BOOL FLOAT STRING
+%token INT BOOL FLOAT STRING NONETYPE
 %token <int> INT_LITERAL
 %token <float> FLOAT_LITERAL
 %token <string> STRING_LITERAL
@@ -113,7 +113,9 @@ expr_list:
 
 expr:
 	INT_LITERAL   { IntLit($1) }
+	| MINUS INT_LITERAL { IntLit(-1 * $2) }
 	| FLOAT_LITERAL { FloatLit($1) }
+	| MINUS FLOAT_LITERAL { FloatLit(-1. *. $2) }
 	| STRING_LITERAL { StringLit($1) }
 	| BOOL_LITERAL { BoolLit($1) }
 	| LBRACKET expr_opt RBRACKET { ArrayLit($2) }
@@ -152,6 +154,7 @@ typ:
 	| BOOL { Bool }
 	| FLOAT { Float }
 	| STRING { String }
+	| NONETYPE { NoneType }
 	| TUPLE { Tuple }
 	| STRING_ARRAY { Array(String, $1) }
 	| INT_ARRAY { Array(Int, $1) }

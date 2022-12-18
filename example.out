@@ -1,9 +1,16 @@
+; ModuleID = 'compyle'
+source_filename = "compyle"
 
+define i32 @main() {
+entry:
+  br i1 true, label %then, label %else
 
-Parsed Program: 
+then:                                             ; preds = %entry
+  ret i32 0
 
-def add(x: int, y: int) -> int:
-sum: int(int : (int : x) + (int : y))
-return (int : sum)
-print((int : add((int : 1), (int : 2))))
-<EOF>
+else:                                             ; preds = %entry
+  ret i32 2
+
+end_if:                                           ; No predecessors!
+  ret i32 0
+}
