@@ -69,7 +69,49 @@ let translate (sprogram : sprogram) =
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
     | SArrayLit l -> raise (Failure "Unimplemented")
     | STupleLit _ -> raise (Failure " Unimplemented")
-    | SBinop (_, _, _) -> raise (Failure " Unimplemented")
+    | SBinop (e1, op, e2) ->
+      (let ty = fst e1 in  
+      let e1' = build_IR_on_expr builder e1
+      and e2' = build_IR_on_expr builder e2 in
+      match ty with
+        | Int -> (match op with
+            A.Add     -> L.build_add
+            | A.Sub     -> L.build_sub
+            | A.Mult    -> L.build_mul
+            | A.Div     -> L.build_sdiv
+            | A.Mod     -> L.build_srem
+            | A.Eq       -> L.build_icmp L.Icmp.Eq
+            | A.Neq     -> L.build_icmp L.Icmp.Ne
+            | A.Gt      -> L.build_icmp L.Icmp.Sgt
+            | A.Lt      -> L.build_icmp L.Icmp.Slt
+            | A.Geq      -> L.build_icmp L.Icmp.Sge
+            | A.Leq      -> L.build_icmp L.Icmp.Sle
+            | _ -> raise(Failure "Developer Error")
+            ) e1' e2' "tmp" builder
+        | Float ->
+            (match op with
+            A.Add     -> L.build_fadd
+            | A.Sub     -> L.build_fsub
+            | A.Mult    -> L.build_fmul
+            | A.Div     -> L.build_fdiv
+            | A.Mod     -> L.build_frem
+            | A.Eq       -> L.build_fcmp L.Fcmp.Oeq
+            | A.Neq     -> L.build_fcmp L.Fcmp.One
+            | A.Gt      -> L.build_fcmp L.Fcmp.Ogt
+            | A.Lt      -> L.build_fcmp L.Fcmp.Olt
+            | A.Geq      -> L.build_fcmp L.Fcmp.Oge
+            | A.Leq      -> L.build_fcmp L.Fcmp.Ole
+            | _ -> raise(Failure "Developer Error")
+            ) e1' e2' "tmp" builder
+        | Bool -> 
+            (match op with
+            | A.Eq       -> L.build_icmp L.Icmp.Eq
+            | A.Neq     -> L.build_icmp L.Icmp.Ne
+            | A.And     -> L.build_and
+            | A.Or      -> L.build_or
+            | _ -> raise(Failure "Developer Error")
+            ) e1' e2' "tmp" builder
+        | _ -> raise(Failure "Type Error"))
     | SId s -> raise (Failure "Unimplemented")
     | SAsn (_, _) -> raise (Failure " Unimplemented")
     | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
