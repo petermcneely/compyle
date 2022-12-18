@@ -93,7 +93,16 @@ let translate (sprogram : sprogram) =
       ignore(L.build_store e_addr (lookup s) builder); (* %store %e %s_mem *)
       e_addr 
 
-    | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
+    | SAugAsn (s, ag_op, e) -> 
+      (* Plan: 
+        s = s + e 
+        e.code || Binop(s, e) || assignment   
+      *)
+      let e_addr = build_IR_on_expr builder e in 
+      let sum_addr = L.build_add e_addr (lookup s) "tmp" builder in 
+      ignore(L.build_store sum_addr (lookup s) builder);
+      sum_addr
+
     | SNot _ -> raise (Failure " Unimplemented")
     | SIn (_, _) -> raise (Failure " Unimplemented")
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
