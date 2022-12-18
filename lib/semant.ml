@@ -172,7 +172,6 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         (top_level: bool) ) : sstmt =
     match stmt with
     | Break -> SBreak
-    | Continue -> SContinue
     | Expr e -> SExpr (check_expr (decl_vars, decl_funcs, e))
     | Function (fname, params, rtyp, fbody) ->
         if top_level = false then raise (Failure ("Nested function definitions are not allowed. Received a definition for a function named: " ^ fname));

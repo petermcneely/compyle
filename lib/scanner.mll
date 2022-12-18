@@ -126,7 +126,6 @@ and code manager = parse
 | "else"                                                    { ELSE }
 | "for"                                                     { FOR }
 | "while"                                                   { WHILE }
-| "continue"                                                { CONTINUE }
 | "break"                                                   { BREAK }
 | "def"                                                     { DEF }
 | "->"                                                      { ARROW }
