@@ -1,0 +1,23 @@
+"""
+A test to showcase different features of ComPyle
+"""
+
+x :int = 4
+y :float = 6.0
+
+def print_vals() -> None:
+    print(x)
+    print(y)
+
+def array_sum(arr: float[]) -> float:
+    z: float
+    for i in arr:
+        z += i
+    return z
+
+def main() -> int:
+    print_vals()
+    r: float[] = [1., 2., 3.]
+    s: float = array_sum(r)
+    print(s)
+    return 0
