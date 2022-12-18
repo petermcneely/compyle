@@ -21,7 +21,6 @@ let translate (sprogram : sprogram) =
   let the_module = L.create_module context "compyle" in
   (* Get types from the context *)
   let i32_t      = L.i32_type    context
-  and i8_t       = L.i8_type context 
   and f32_t      = L.float_type  context
   and i1_t       = L.i1_type     context in
 
@@ -32,6 +31,13 @@ let translate (sprogram : sprogram) =
     | A.Float -> f32_t
     | _ -> raise (Failure "Unimplemented")
   in
+
+  (* TODO: lookup: string -> llvalue 
+    Description: Searches for a variable 'n' first locally and then globally and returns its value if found   
+  *)
+  let lookup n = 
+    L.const_int i32_t 3 
+  in 
 
   let func_declarations : (L.llvalue * sstmt) StringMap.t = 
     let func_decl m sstmt = 
@@ -69,9 +75,24 @@ let translate (sprogram : sprogram) =
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
     | SArrayLit l -> raise (Failure "Unimplemented")
     | STupleLit _ -> raise (Failure " Unimplemented")
-    | SBinop (_, _, _) -> raise (Failure " Unimplemented")
-    | SId s -> raise (Failure "Unimplemented")
-    | SAsn (_, _) -> raise (Failure " Unimplemented")
+    | SBinop (e1, op, e2) -> 
+      let e1_addr = build_IR_on_expr builder e1 in 
+      let e2_addr = build_IR_on_expr builder e2 in 
+      (
+        match op with 
+          | Add -> L.build_add e1_addr e2_addr "tmp" builder 
+          | Sub -> 
+          | _ -> raise (Failure "hello") 
+      )
+    | SId s -> L.build_load (lookup s) s builder (* %s = load %(value of s)*)
+    | SAsn (s, e) -> 
+      (* Plan: 
+        e.code || Gen(s, "=", e.addr)  
+      *)
+      let e_addr = build_IR_on_expr builder e in 
+      ignore(L.build_store e_addr (lookup s) builder); (* %store %e %s_mem *)
+      e_addr 
+
     | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
     | SNot _ -> raise (Failure " Unimplemented")
     | SIn (_, _) -> raise (Failure " Unimplemented")
@@ -80,7 +101,7 @@ let translate (sprogram : sprogram) =
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
     (* match sstmt*)
-    | SBreak -> raise (Failure "Unimplemented")
+    | SBreak -> ignore(L.build_ret_void builder); builder 
     | SContinue -> raise (Failure "Unimplemented")
     | SExpr e -> 
       ignore(build_IR_on_expr builder e); builder
@@ -163,15 +184,32 @@ let translate (sprogram : sprogram) =
       let build_br_end = L.build_br end_bb in (* partial function *)
       add_terminal (L.builder_at_end context body_bb) build_br_end;
       
-      L.builder_at_end context end_bb 
+      L.builder_at_end context end_bb
+    | SFor (var_name, itr, stmts) -> 
+      (* 
+        SFor(var_name, itr, stmts) -> 
+        HEAD: 
+          itr.code
+          jmp LOOP   
+        LOOP: 
+          - need to store current value of var_name in the symbol table for local variables 
+          stmts.code 
+          jmp HEAD? 
+        END:
+      *)
       
-    | SFor (st, expr, stmts) -> raise (Failure "Unimplemented")
-    (* 
-       for i in [1. 2. 3]
-       st index, 0 
-       st val, expr[index]
-    *)
+      let the_function = L.block_parent (L.insertion_block builder) in 
+      let head_bb = L.append_block context "head" the_function in  
+      let loop_bb = L.append_block context "loop" the_function in 
+      let end_bb = L.append_block context "end" the_function in 
 
+      let start_val = build_IR_on_expr builder itr in (* itr.code *)
+      ignore(L.build_br loop_bb builder); (* jmp LOOP *)
+      
+      ignore(L.position_at_end loop_bb builder);
+      let variable = L.build_phi [(start_val, head_bb)] var_name builder in 
+
+      build_IR_on_stmt_list builder stmts 
 
     | SPrint _ -> raise (Failure "Unimplemented")
     | SDecl (_, _, _) -> raise (Failure "Unimplemented")
