@@ -58,6 +58,7 @@ let translate (sprogram : sprogram) =
   let get_function_builder name = 
     let (the_function, _) = StringMap.find name func_declarations in 
     L.builder_at_end context (L.entry_block the_function)
+  in
 
   (* More should be filled in here *)
   let rec build_IR_on_expr builder ((_, e) : sexpr) =
@@ -125,7 +126,7 @@ let translate (sprogram : sprogram) =
 
       let then_bb = L.append_block context "then" the_function in 
       let else_bb = L.append_block context "else" the_function in 
-      let end_bb = L.append_block context "end_if" in
+      let end_bb = L.append_block context "end_if" the_function in
 
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
@@ -158,18 +159,19 @@ let translate (sprogram : sprogram) =
 
       let cond_bb = L.append_block context "cond" the_function in 
       let body_bb = L.append_block context "body" the_function in 
-      let end_bb = L.append_block context "end" in 
+      let end_bb = L.append_block context "end" the_function in 
 
       let cond_builder = L.builder_at_end context cond_bb in 
       let expr_addr = build_IR_on_expr cond_builder e in  
       
-      L.build_cond_br e 
+      ignore(L.build_cond_br expr_addr body_bb end_bb cond_builder); 
 
       let body_builder = L.builder_at_end context body_bb in 
       let body_builder = build_IR_on_stmt_list body_builder sl in 
-
+      let build_br_end = L.build_br end_bb in (* partial function *)
+      add_terminal (L.builder_at_end context body_bb) build_br_end;
       
-      builder 
+      L.builder_at_end context end_bb 
       
     | SFor (st, expr, stmts) -> raise (Failure "Unimplemented")
     (* 
