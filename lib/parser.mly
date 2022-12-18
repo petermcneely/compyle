@@ -113,7 +113,9 @@ expr_list:
 
 expr:
 	INT_LITERAL   { IntLit($1) }
+	| MINUS INT_LITERAL { IntLit(-1 * $2) }
 	| FLOAT_LITERAL { FloatLit($1) }
+	| MINUS FLOAT_LITERAL { FloatLit(-1. *. $2) }
 	| STRING_LITERAL { StringLit($1) }
 	| BOOL_LITERAL { BoolLit($1) }
 	| LBRACKET expr_opt RBRACKET { ArrayLit($2) }
