@@ -78,21 +78,13 @@ let translate (sprogram : sprogram) =
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
     | SCall (_, _) -> raise (Failure " Unimplemented")
   in
-  let rec build_IR_on_stmt builder = function
+  let rec build_IR_on_stmt (builder: L.llbuilder) = function
     (* match sstmt*)
     | SBreak -> raise (Failure "Unimplemented")
     | SContinue -> raise (Failure "Unimplemented")
     | SExpr e -> 
       ignore(build_IR_on_expr builder e); builder
-    | SFunction (name, formals, rtyp, sl) -> 
-      let f_builder = get_function_builder name in  
-      (*
-        FNAME: 
-        -> builder   
-      *)
-
-      build_IR_on_stmt_list f_builder sl 
-
+    | SFunction _ -> builder
     | SReturn e -> 
       (* 
         e.code || 
@@ -183,12 +175,22 @@ let translate (sprogram : sprogram) =
 
     | SPrint _ -> raise (Failure "Unimplemented")
     | SDecl (_, _, _) -> raise (Failure "Unimplemented")
-  and 
-  build_IR_on_stmt_list builder sl = 
+  and build_IR_on_function = function
+  | SFunction (name, formals, rtyp, sl) -> 
+    let f_builder = get_function_builder name in  
+    (*
+      FNAME: 
+      -> builder   
+    *)
+    let func_builder = build_IR_on_stmt_list f_builder sl in
+    add_terminal func_builder (L.build_ret (L.const_int i32_t 0))
+  | _ -> ()
+  and build_IR_on_stmt_list builder sl = 
       List.fold_left build_IR_on_stmt builder sl 
   in
   (* Unsure the usage of L.builder here but it helps compile for now*)
   (*List.map (build_IR_on_stmt L.builder) sprogram;*)
+  List.iter build_IR_on_function sprogram;
 
   (* the_module is a mutable ptr *)
   the_module
