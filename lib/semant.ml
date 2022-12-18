@@ -98,16 +98,15 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         if t1 = t2 then
           let t =
             match bin_op with
-            | (Add | Sub | Mult | FDiv | Mod | Exp) when t1 = Int -> Int
-            | (Add | Sub | Mult | Div | Mod | Exp) when t1 = Float -> Float
-            | (And | Or) when t1 = Bool -> Bool
-            | (Eq | Neq) when t1 = Bool -> Bool
-            | (Gt | Lt | Geq | Leq) when t1 = Float -> Bool
-            | (Gt | Lt | Geq | Leq) when t1 = Int -> Bool
-            | _ -> raise (Failure "Incompatible operands")
+            | (Add | Sub | Mult | FDiv | Mod | Exp) when t1 = Int || t1 = Float -> t1
+            | (And | Or) when t1 = Bool -> t1
+            | (Eq | Neq) -> Bool
+            | (Gt | Lt | Geq | Leq) when t1 = Float || t1 = Int -> Bool
+            | _ -> raise (Failure ("Cannot perform '" ^ string_of_bin_op bin_op ^ "' on '" ^ string_of_typ t1 ^ "'"))
           in
           (t, SBinop ((t1, e1'), bin_op, (t2, e2')))
-        else raise (Failure "Incompatible operands")
+        else
+          raise (Failure ("Both operands need to be the same type when performing a '" ^ string_of_bin_op bin_op ^ "'. Received '" ^ string_of_typ t1 ^ "' and '" ^ string_of_typ t2 ^ "'"))
     | Id var -> (find_var_type (decl_vars, var), SId var)
     | Asn (var, e) ->
         let t = find_var_type (decl_vars, var) 
