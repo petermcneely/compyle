@@ -101,7 +101,6 @@ and code manager = parse
 | '/'                                                       { DIVIDE }
 | '%'                                                       { MODULO }
 | "**"                                                      { EXP }
-| "//"                                                      { FDIVIDE }
 | '='                                                       { ASSIGN }
 | "+="                                                      { PLUS_ASSIGN }
 | "-="                                                      { MINUS_ASSIGN }
@@ -109,7 +108,6 @@ and code manager = parse
 | "/="                                                      { DIV_ASSIGN }
 | "%="                                                      { MOD_ASSIGN }
 | "**="                                                     { EXP_ASSIGN }
-| "//="                                                     { FDIV_ASSIGN }
 | "=="                                                      { EQ }
 | "!="                                                      { NEQ }
 | '<'                                                       { LT }
