@@ -137,9 +137,8 @@ run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses While Loop" in
 let comparing = "while x > 5:\r\n
-\ty = 5\r\n
-\tcontinue\r\n" in
-let expected = ["while x > 5:"; "y = 5"; "continue"; ""] in 
+\ty = 5\r\n" in
+let expected = ["while x > 5:"; "y = 5"; ""] in 
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses multi-dimensional arrays" in

@@ -123,7 +123,6 @@ let translate (sprogram : sprogram) =
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
     (* match sstmt*)
     | SBreak -> raise (Failure "Unimplemented")
-    | SContinue -> raise (Failure "Unimplemented")
     | SExpr e -> 
       ignore(build_IR_on_expr builder e); builder
     | SFunction _ -> builder
