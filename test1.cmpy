@@ -1,14 +1,16 @@
-"""
-A test to showcase different features of ComPyle
-"""
+
+# A test to showcase different features of ComPyle
+
 
 x :int = 4
 y :float = 6.0
 
+# Prints global variable values
 def print_vals() -> None:
     print(x)
     print(y)
 
+# Sums values in an array
 def array_sum(arr: float[]) -> float:
     z: float
     for i in arr:
