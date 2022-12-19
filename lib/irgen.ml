@@ -86,7 +86,7 @@ let translate (sprogram : sprogram) =
   in
 
   (* More should be filled in here *)
-  let rec build_IR_on_expr builder ((_, e) : sexpr) =
+  let rec build_IR_on_expr builder ((_, e) : sexpr) local_variables (global_variables) =
     match e with
     | SIntLit i -> L.const_int i32_t i 
     | SFloatLit i -> L.const_float f32_t i
@@ -96,8 +96,8 @@ let translate (sprogram : sprogram) =
     | STupleLit _ -> raise (Failure " Unimplemented")
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
-      let e1' = build_IR_on_expr builder e1
-      and e2' = build_IR_on_expr builder e2 in
+      let e1' = build_IR_on_expr builder e1 local_variables global_variables
+      and e2' = build_IR_on_expr builder e2 local_variables global_variables in
       match ty with
         | Int -> (match op with
             A.Add     -> L.build_add
@@ -155,7 +155,7 @@ let translate (sprogram : sprogram) =
       (* Plan: 
         e.code || Gen(s, "=", e.addr)  
       *)
-      let e_addr = build_IR_on_expr builder e in
+      let e_addr = build_IR_on_expr builder e local_variables global_variables in
       let lv = Hashtbl.find local_variables s in
       ignore(L.build_store e_addr (snd lv) builder); (* %store %e %s_mem *)
       e_addr 
@@ -164,18 +164,18 @@ let translate (sprogram : sprogram) =
         s = s + e 
         e.code || Binop(s, e) || assignment   
       *)
-      let e_addr = build_IR_on_expr builder e in 
+      let e_addr = build_IR_on_expr builder e local_variables global_variables in 
       let lv = Hashtbl.find local_variables s in
       let sum_addr = L.build_add e_addr (snd lv) "tmp" builder in 
       ignore(L.build_store sum_addr (snd lv) builder);
       sum_addr
     | SNot e -> 
-      let e_addr = build_IR_on_expr builder e in  
+      let e_addr = build_IR_on_expr builder e local_variables global_variables in  
       L.build_not e_addr "tmp" builder
     | SIn (_, _) -> raise (Failure " Unimplemented")
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
     | SCall ("print", [e]) ->
-      let llval = build_IR_on_expr builder e in
+      let llval = build_IR_on_expr builder e local_variables global_variables in
       let arr = if (fst e) = A.String then
         [| llval |]
       else
@@ -185,23 +185,23 @@ let translate (sprogram : sprogram) =
       L.build_call printf_func arr "printf" builder
     | SCall (fname, args) -> 
       let (f_addr, sstmt) = StringMap.find fname func_declarations in 
-      let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e) (List.rev args)) in 
+      let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) (List.rev args)) in 
       L.build_call f_addr (Array.of_list llargs) (fname^" result") builder 
   in
-  let rec build_IR_on_stmt (builder: L.llbuilder) = function
+  let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) = function
     (* match sstmt*)
     | SBreak -> ignore(L.build_ret_void builder); builder
     | SExpr e -> 
-      ignore(build_IR_on_expr builder e); builder
+      ignore(build_IR_on_expr builder e local_variables global_variables); builder
     | SFunction _ -> builder
     | SReturn e -> 
       (* 
         e.code || 
         L.build_ret 
       *)
-      ignore(L.build_ret (build_IR_on_expr builder e) builder); builder
+      ignore(L.build_ret (build_IR_on_expr builder e local_variables global_variables) builder); builder
     | SIf (pred, stmt1, stmt2) -> 
-      let expr_addr = build_IR_on_expr builder pred in 
+      let expr_addr = build_IR_on_expr builder pred  local_variables global_variables in 
 
       let the_function = L.block_parent (L.insertion_block builder) in
 
@@ -232,10 +232,10 @@ let translate (sprogram : sprogram) =
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
       let then_builder = L.builder_at_end context then_bb in 
-      ignore(build_IR_on_stmt_list then_builder stmt1);
+      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables);
 
       let else_builder = L.builder_at_end context else_bb in 
-      ignore(build_IR_on_stmt_list else_builder stmt2);
+      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables);
 
       let build_br_end = L.build_br end_bb in (* partial function *)
       add_terminal (L.builder_at_end context then_bb) build_br_end;
@@ -258,21 +258,19 @@ let translate (sprogram : sprogram) =
       (* TODO: Create three blocks: COND, BODY, END*)
       let the_function = L.block_parent (L.insertion_block builder) in 
 
-      let cond_bb = L.append_block context "cond" the_function in 
-      let body_bb = L.append_block context "body" the_function in 
-      let end_bb = L.append_block context "end" the_function in 
+      let while_bb = L.append_block context "while" the_function in
+      let build_br_while = L.build_br while_bb in
+      ignore(build_br_while builder);
+      let while_builder = L.builder_at_end context while_bb in 
+      let bool_val = build_IR_on_expr while_builder e local_variables global_variables in
 
-      let cond_builder = L.builder_at_end context cond_bb in 
-      let expr_addr = build_IR_on_expr cond_builder e in  
-      
-      ignore(L.build_cond_br expr_addr body_bb end_bb cond_builder); 
+      let body_bb = L.append_block context "while_body" the_function in
+      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables) build_br_while;
 
-      let body_builder = L.builder_at_end context body_bb in 
-      let body_builder = build_IR_on_stmt_list body_builder sl in 
-      let build_br_end = L.build_br end_bb in (* partial function *)
-      add_terminal (L.builder_at_end context body_bb) build_br_end;
-      
-      L.builder_at_end context end_bb 
+      let end_bb = L.append_block context "while_end" the_function in 
+
+      ignore(L.build_cond_br bool_val body_bb end_bb while_builder);
+      L.builder_at_end context end_bb
       
     | SFor (var_name, itr, stmts) -> 
       (* 
@@ -292,17 +290,17 @@ let translate (sprogram : sprogram) =
       let loop_bb = L.append_block context "loop" the_function in 
       let end_bb = L.append_block context "end" the_function in 
 
-      let start_val = build_IR_on_expr builder itr in (* itr.code *)
+      let start_val = build_IR_on_expr builder itr local_variables global_variables in (* itr.code *)
       ignore(L.build_br loop_bb builder); (* jmp LOOP *)
 
       ignore(L.position_at_end loop_bb builder);
       let variable = L.build_phi [(start_val, head_bb)] var_name builder in 
 
-      build_IR_on_stmt_list builder stmts
+      build_IR_on_stmt_list builder stmts local_variables global_variables
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
-          let e_addr = build_IR_on_expr builder expr in
+          let e_addr = build_IR_on_expr builder expr local_variables global_variables in
           let local_variable = L.build_alloca (L.type_of e_addr) id builder in
           Hashtbl.add local_variables id (typ, local_variable);
           ignore(L.build_store e_addr local_variable builder) (* %store %e %s_mem *)
@@ -315,12 +313,24 @@ let translate (sprogram : sprogram) =
       builder
   and build_IR_on_function = function
   | SFunction (name, formals, rtyp, sl) -> 
-    let f_builder = get_function_builder name in  
+    let f_builder = get_function_builder name in
+    let (the_function, _) = StringMap.find name func_declarations in
     (*
       FNAME: 
       -> builder   
     *)
-    let func_builder = build_IR_on_stmt_list f_builder sl in
+
+    let scoped_local_variables = Hashtbl.copy local_variables in
+
+    let add_formal (hash_table: (string, A.typ * L.llvalue) Hashtbl.t) (t: A.typ) (name: string) (pointer: L.llvalue) =
+      L.set_value_name name pointer;
+      let local = L.build_alloca (ltype_of_typ t) name f_builder in
+      ignore (L.build_store pointer local f_builder);
+      Hashtbl.add hash_table name (t, local) in 
+    List.iter2 (fun decl -> add_formal scoped_local_variables (snd decl) (fst decl) ) formals (Array.to_list (L.params the_function));
+    
+    let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables in
+    
     add_terminal func_builder (L.build_ret (L.const_int i32_t 0))  
   | SDecl (name, typ, expr_opt) ->
     let default_const = function
@@ -340,8 +350,8 @@ let translate (sprogram : sprogram) =
       | Some sexpr -> initialized_const (snd sexpr) in
     Hashtbl.add global_variables name (typ, (L.define_global name initial_value the_module));
   | _ -> ()
-  and build_IR_on_stmt_list builder sl = 
-      List.fold_left build_IR_on_stmt builder sl 
+  and build_IR_on_stmt_list builder sl local_variables global_variables = 
+      List.fold_left (fun b s -> build_IR_on_stmt b local_variables global_variables s) builder sl 
   in
   (* Unsure the usage of L.builder here but it helps compile for now*)
   (*List.map (build_IR_on_stmt L.builder) sprogram;*)
