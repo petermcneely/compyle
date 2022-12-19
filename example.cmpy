@@ -1,4 +1,4 @@
-x: string = "Hello World!"
+x: string = "Hello World from global!"
 
 def main() -> int:
 	y: string = "hi locally"

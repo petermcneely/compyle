@@ -85,7 +85,7 @@ let translate (sprogram : sprogram) =
     match e with
     | SIntLit i -> L.const_int i32_t i 
     | SFloatLit i -> L.const_float f32_t i
-    | SStringLit s -> L.const_string context s
+    | SStringLit s -> L.build_global_stringptr (String.sub s 1 ((String.length s) - 2)) "" builder
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
     | SArrayLit l -> raise (Failure "Unimplemented")
     | STupleLit _ -> raise (Failure " Unimplemented")
@@ -133,19 +133,27 @@ let translate (sprogram : sprogram) =
             ) e1' e2' "tmp" builder
         | _ -> raise(Failure "Type Error"))
     | SId s -> (
-        let var = try Hashtbl.find local_variables s with Not_found -> Hashtbl.find global_variables s in
-        match fst var with
-          | A.String -> snd var
-          | _ -> L.build_load (snd var) s builder)
+      try
+        let lv = Hashtbl.find local_variables s in
+        L.build_load (snd lv) s builder
+      with Not_found -> (
+        let gv = Hashtbl.find global_variables s in
+        match fst gv with
+        | A.String -> (
+          let zero = L.const_int i32_t 0 in
+          L.build_in_bounds_gep (snd gv) [| zero; zero |] s builder
+        )
+        | _ -> L.build_load (snd gv) s builder
+      )
+    )
     | SAsn (_, _) -> raise (Failure " Unimplemented")
     | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
     | SNot _ -> raise (Failure " Unimplemented")
     | SIn (_, _) -> raise (Failure " Unimplemented")
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
     | SCall ("print", [e]) ->
-      let gsp = build_gsp builder (fst e) in
-      L.build_call printf_func [| gsp; (build_IR_on_expr builder e) |]
-        "printf" builder
+      let llval = build_IR_on_expr builder e in
+      L.build_call printf_func [| llval |] "printf" builder
     | SCall (_, _) -> raise (Failure " Unimplemented")
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
@@ -245,8 +253,8 @@ let translate (sprogram : sprogram) =
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
-          let e_addr = build_IR_on_expr builder expr in 
-          let local_variable = L.build_alloca (ltype_of_typ typ) id builder in
+          let e_addr = build_IR_on_expr builder expr in
+          let local_variable = L.build_alloca (L.type_of e_addr) id builder in
           Hashtbl.add local_variables id (typ, local_variable);
           ignore(L.build_store e_addr local_variable builder) (* %store %e %s_mem *)
       )
@@ -269,13 +277,13 @@ let translate (sprogram : sprogram) =
     let default_const = function
       | A.Int -> L.const_int i32_t 0
       | A.Float -> L.const_float f32_t 0.
-      | A.String -> L.const_string context ""
+      | A.String -> L.const_stringz context ""
       | A.Bool -> L.const_int i1_t 0
       | _ -> raise (Failure "wrong default type") in
     let initialized_const = function
       | SIntLit i -> L.const_int i32_t i
       | SFloatLit f -> L.const_float f32_t f
-      | SStringLit s -> L.const_string context s
+      | SStringLit s -> L.const_stringz context (String.sub s 1 ((String.length s) - 2))
       | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
       | _ -> raise (Failure "wrong constant type") in
     let initial_value = match expr_opt with
