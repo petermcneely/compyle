@@ -179,7 +179,7 @@ run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks print" in
 let actual = build_main "print(\"string\")" in
-let expected = build_expected_main ["print((string : \"string\"))"] in
+let expected = build_expected_main ["(int : print((string : \"string\")))"] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks nonetype function call" in
@@ -187,7 +187,7 @@ let addition = "def foo() -> None:\r\n\
 \tprint(\"foo\")\r\n\
 def main() -> int:\r\n\
 \tfoo()\r\n" in
-let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; "def main() -> int:"; "(None : foo())"; ""] in
+let expected = ["def foo() -> None:"; "(int : print((string : \"foo\")))"; "def main() -> int:"; "(None : foo())"; ""] in
 run_test ~debug:false test_case (addition ^ "\n") expected;
 
 
@@ -196,7 +196,7 @@ let addition = "def foo() -> None:\r\n
 \tprint(\"foo\")\r\n
 x: int\r\n
 x = foo()\r\n" in
-let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
+let expected = ["def foo() -> None:"; "(int : print((string : \"foo\")))"; ""] in
 try
   run_test ~debug:false test_case (addition ^ "\n") expected;
 with Failure e when e = "Cannot assign variable to nonetype" -> pass_test();
@@ -207,7 +207,7 @@ let addition = "def foo() -> None:\r\n
 \tprint(\"foo\")\r\n
 x: int = 4\r\n
 x += foo()\r\n" in
-let expected = ["def foo() -> None:"; "print((string : \"foo\"))"; ""] in
+let expected = ["def foo() -> None:"; "(int : print((string : \"foo\")))"; ""] in
 try
   run_test ~debug:false test_case (addition ^ "\n") expected;
 with Failure e when e = "Cannot assign variable to nonetype" -> pass_test();
