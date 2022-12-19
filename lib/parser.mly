@@ -6,7 +6,7 @@ open Ast
 
 %token COMMA COLON NEWLINE PERIOD
 %token INDENT DEDENT
-%token DEF RETURN PRINT ARROW
+%token DEF RETURN ARROW
 %token LPAREN RPAREN LBRACKET RBRACKET
 %token IF ELIF ELSE WHILE FOR IN
 %token BREAK
@@ -56,7 +56,6 @@ stmt:
 	| expr NEWLINE { Expr($1) }
 	| function_stmt { $1 }
 	| return_stmt NEWLINE { $1 }
-	| print_stmt NEWLINE { $1 }
 	| if_stmt { $1 }
 	| while_stmt { $1 }
 	| for_stmt { $1 }
@@ -98,9 +97,6 @@ while_stmt:
 
 for_stmt:
 	FOR ID IN expr COLON block { For($2, $4, $6) }
-
-print_stmt:
-	PRINT LPAREN expr RPAREN { Print($3) }
 
 expr_opt:
 	/* nothing */ { [] }

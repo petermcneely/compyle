@@ -212,9 +212,6 @@ let translate (sprogram : sprogram) =
        st index, 0 
        st val, expr[index]
     *)
-
-
-    | SPrint _ -> raise (Failure "Unimplemented")
     | SDecl (_, _, _) -> raise (Failure "Unimplemented")
   and build_IR_on_function = function
   | SFunction (name, formals, rtyp, sl) -> 

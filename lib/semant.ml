@@ -29,6 +29,13 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
       else raise (Failure ("Unbound function " ^ fname))
   in
 
+  (* add built in print function
+   * we actually do not care about the parameters since we'll semantically
+   * work around this below
+  *)
+  let print_function = Function ("print", [], Int, []) in
+  add_func (var_decls_global, func_decls_global, print_function);
+
   let add_var
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
@@ -172,8 +179,13 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
                 check_expr (decl_vars, decl_funcs, ex)
               in
               let s_args = List.map check_expr_with_decls args in
-              if args_has_same_type (params, s_args) then
+              if (not (fname = "print")) && args_has_same_type (params, s_args) then
                 (frtyp, SCall (fname, s_args))
+              else if fname = "print" then
+                if not (List.length args = 1) then
+                  raise (Failure ("You can only print one expression. Received a call to print " ^ string_of_int (List.length args) ^ " arguments"))
+                else
+                  (frtyp, SCall (fname, s_args))
               else raise (Failure "Incompatible argument types")
           | _ -> raise (Failure "Expect function")
         in
@@ -250,7 +262,6 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
-    | Print e -> SPrint (check_expr (decl_vars, decl_funcs, e))
     | Decl (id, t, expr_opt) ->
         add_var (decl_vars, decl_funcs, id, t);
         let some_sexpr =
