@@ -22,7 +22,7 @@ let translate (sprogram : sprogram) =
   (* Get types from the context *)
   let i32_t      = L.i32_type    context
   and i8_t       = L.i8_type context 
-  and f32_t      = L.float_type  context
+  and f32_t      = L.double_type  context
   and i1_t       = L.i1_type     context 
   and pointer_i8_t = L.pointer_type (L.i8_type context) in
 
