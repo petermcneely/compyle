@@ -56,7 +56,7 @@ def main() -> int:\r\n\
 \tx: int = 5\r\n
 \ty: int = 6\r\n
 \tprint(add(x,y))\r\n" in
-let expected = ["def add(x: int, y: int) -> int:"; "sum: int"; "(int : sum = (int : (int : x) + (int : y)))"; "return (int : sum)"; "def main() -> int:"; "x: int(int : 5)"; "y: int(int : 6)"; "print((int : add((int : x), (int : y))))"; "" ] in
+let expected = ["def add(x: int, y: int) -> int:"; "sum: int"; "(int : sum = (int : (int : x) + (int : y)))"; "return (int : sum)"; "def main() -> int:"; "x: int(int : 5)"; "y: int(int : 6)"; "(int : print((int : add((int : x), (int : y)))))"; "" ] in
 run_test ~debug:false test_case actual expected;
 
 let test_case = "Semantically checks int literal" in

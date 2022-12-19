@@ -1,5 +1,7 @@
+x: string = "Hello World!"
+
 def main() -> int:
-	if True:
-		return 0
-	else:
-		return 2
+	y: string = "hi locally"
+	print(x)
+	print(y)
+	return 0

@@ -1,16 +1,17 @@
 ; ModuleID = 'compyle'
 source_filename = "compyle"
 
+@x = global [14 x i8] c"\22Hello World!\22"
+@strgsp = private unnamed_addr constant [3 x i8] c"%s\00", align 1
+@strgsp.1 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
+
+declare i32 @printf(i8*, ...)
+
 define i32 @main() {
 entry:
-  br i1 true, label %then, label %else
-
-then:                                             ; preds = %entry
-  ret i32 0
-
-else:                                             ; preds = %entry
-  ret i32 2
-
-end_if:                                           ; No predecessors!
+  %y = alloca i8*, align 8
+  store [12 x i8] c"\22hi locally\22", i8** %y, align 1
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @strgsp, i32 0, i32 0), [14 x i8]* @x)
+  %printf1 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @strgsp.1, i32 0, i32 0), i8** %y)
   ret i32 0
 }

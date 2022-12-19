@@ -20,18 +20,38 @@ let translate (sprogram : sprogram) =
   (* in each function, it also contains basic blocks with error codes *)
   let the_module = L.create_module context "compyle" in
   (* Get types from the context *)
-  let i32_t      = L.i32_type    context
-  and i8_t       = L.i8_type context 
-  and f32_t      = L.float_type  context
-  and i1_t       = L.i1_type     context in
+  let i32_t        = L.i32_type    context
+  and i8_t         = L.i8_type context 
+  and f32_t        = L.float_type  context
+  and i1_t         = L.i1_type     context 
+  and pointer_i8_t = L.pointer_type (L.i8_type context) in
+
+  let local_variables = Hashtbl.create 100 in
+  let global_variables = Hashtbl.create 100 in
+  let global_stringptrs = Hashtbl.create 100 in 
 
   (* Return the LLVM type for a MicroC type *)
   let ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.Float -> f32_t
+    | A.String -> pointer_i8_t 
     | _ -> raise (Failure "Unimplemented")
   in
+
+  let printf_t : L.lltype =
+    L.var_arg_function_type i32_t [| pointer_i8_t |] in
+  let printf_func : L.llvalue =
+    L.declare_function "printf" printf_t the_module in
+
+  let build_gsp builder = function
+    | A.String -> L.build_global_stringptr "%s" "strgsp" builder
+    | A.Int -> L.build_global_stringptr "%d" "intgsp" builder
+    | A.Float -> L.build_global_stringptr "%f" "floatgsp" builder
+    | A.Bool -> L.build_global_stringptr "%d" "boolgsp" builder
+    | _ -> raise (Failure "not supported") in
+
+  let global_string_pointer builder = L.build_global_stringptr "%s" "gsp" builder in
 
   let func_declarations : (L.llvalue * sstmt) StringMap.t = 
     let func_decl m sstmt = 
@@ -112,12 +132,20 @@ let translate (sprogram : sprogram) =
             | _ -> raise(Failure "Developer Error")
             ) e1' e2' "tmp" builder
         | _ -> raise(Failure "Type Error"))
-    | SId s -> raise (Failure "Unimplemented")
+    | SId s -> (
+        let var = try Hashtbl.find local_variables s with Not_found -> Hashtbl.find global_variables s in
+        match fst var with
+          | A.String -> snd var
+          | _ -> L.build_load (snd var) s builder)
     | SAsn (_, _) -> raise (Failure " Unimplemented")
     | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
     | SNot _ -> raise (Failure " Unimplemented")
     | SIn (_, _) -> raise (Failure " Unimplemented")
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
+    | SCall ("print", [e]) ->
+      let gsp = build_gsp builder (fst e) in
+      L.build_call printf_func [| gsp; (build_IR_on_expr builder e) |]
+        "printf" builder
     | SCall (_, _) -> raise (Failure " Unimplemented")
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
@@ -214,8 +242,20 @@ let translate (sprogram : sprogram) =
     *)
 
 
-    | SPrint _ -> raise (Failure "Unimplemented")
-    | SDecl (_, _, _) -> raise (Failure "Unimplemented")
+    | SDecl (id, typ, expr_opt) ->
+      if Option.is_some expr_opt then (
+          let expr = Option.get expr_opt in
+          let e_addr = build_IR_on_expr builder expr in 
+          let local_variable = L.build_alloca (ltype_of_typ typ) id builder in
+          Hashtbl.add local_variables id (typ, local_variable);
+          ignore(L.build_store e_addr local_variable builder) (* %store %e %s_mem *)
+      )
+      else (
+        let local_variable = L.build_alloca (ltype_of_typ typ) id builder in
+        Hashtbl.add local_variables id (typ, local_variable)
+      );
+
+      builder
   and build_IR_on_function = function
   | SFunction (name, formals, rtyp, sl) -> 
     let f_builder = get_function_builder name in  
@@ -225,6 +265,23 @@ let translate (sprogram : sprogram) =
     *)
     let func_builder = build_IR_on_stmt_list f_builder sl in
     add_terminal func_builder (L.build_ret (L.const_int i32_t 0))
+  | SDecl (name, typ, expr_opt) ->
+    let default_const = function
+      | A.Int -> L.const_int i32_t 0
+      | A.Float -> L.const_float f32_t 0.
+      | A.String -> L.const_string context ""
+      | A.Bool -> L.const_int i1_t 0
+      | _ -> raise (Failure "wrong default type") in
+    let initialized_const = function
+      | SIntLit i -> L.const_int i32_t i
+      | SFloatLit f -> L.const_float f32_t f
+      | SStringLit s -> L.const_string context s
+      | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
+      | _ -> raise (Failure "wrong constant type") in
+    let initial_value = match expr_opt with
+      | None -> default_const typ
+      | Some sexpr -> initialized_const (snd sexpr) in
+    Hashtbl.add global_variables name (typ, (L.define_global name initial_value the_module));
   | _ -> ()
   and build_IR_on_stmt_list builder sl = 
       List.fold_left build_IR_on_stmt builder sl 
