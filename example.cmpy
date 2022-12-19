@@ -1,7 +1,4 @@
-x: string = "Hello World from global!"
+x: int[]
 
 def main() -> int:
-	y: string = "hi locally"
-	print(x)
-	print(y)
 	return 0

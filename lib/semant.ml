@@ -29,7 +29,10 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
       else raise (Failure ("Unbound function " ^ fname))
   in
 
-  add_func (var_decls_global, func_decls_global, Function ("print", [("x", String)], Int, []));
+  add_func
+    ( var_decls_global,
+      func_decls_global,
+      Function ("print", [ ("x", String) ], Int, []) );
 
   let add_var
       ( (decl_vars : ('a, 'b) Hashtbl.t),
@@ -86,9 +89,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               let head = List.hd s_el in
               let head_type, _ = head in
               let resolve_array_type = function
-                | Array (array_typ, dimension) ->
-                    Array (array_typ, dimension + 1)
-                | _ as s -> Array (s, 1)
+                | Array (array_typ, dimension, _) ->
+                    Array (array_typ, dimension + 1, List.length s_el)
+                | _ as s -> Array (s, 1, List.length s_el)
               in
               (resolve_array_type head_type, SArrayLit s_el)
         in
@@ -146,9 +149,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let sexpr =
           match t2 with
           | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _) when elem_typ = t1 ->
+          | Array (elem_typ, _, _) when elem_typ = t1 ->
               (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _) when elem_typ != t1 ->
+          | Array (elem_typ, _, _) when elem_typ != t1 ->
               raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
@@ -159,9 +162,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let sexpr =
           match t2 with
           | Tuple | EmptyArray -> (Bool, SIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _) when elem_typ = t1 ->
+          | Array (elem_typ, _, _) when elem_typ = t1 ->
               (Bool, SIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _) when elem_typ != t1 ->
+          | Array (elem_typ, _, _) when elem_typ != t1 ->
               raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
@@ -181,9 +184,12 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
                   raise (Failure "You can only print one expression")
                 else
                   let arg = List.hd args in
-                  let _ = match arg with
-                    | IntLit _ | FloatLit _ | BoolLit _ | StringLit _ -> ((frtyp, SCall (fname, s_args)))
-                    | _ -> raise (Failure "printing that is not allowed") in
+                  let _ =
+                    match arg with
+                    | IntLit _ | FloatLit _ | BoolLit _ | StringLit _ ->
+                        (frtyp, SCall (fname, s_args))
+                    | _ -> raise (Failure "printing that is not allowed")
+                  in
 
                   (frtyp, SCall (fname, s_args))
               else raise (Failure "Incompatible argument types")
@@ -246,7 +252,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let t, e' = check_expr (decl_vars, decl_funcs, e) in
         let s_stmt =
           match t with
-          | Array (array_elem_typ, _) ->
+          | Array (array_elem_typ, _, _) ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
               SFor (id, (t, e'), check ~top_level:false for_block)
           | _ -> raise (Failure "Expect Array")

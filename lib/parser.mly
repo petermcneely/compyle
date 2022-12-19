@@ -149,10 +149,10 @@ typ:
 	| STRING { String }
 	| NONETYPE { NoneType }
 	| TUPLE { Tuple }
-	| STRING_ARRAY { Array(String, $1) }
-	| INT_ARRAY { Array(Int, $1) }
-	| FLOAT_ARRAY { Array(Float, $1) }
-	| BOOL_ARRAY { Array(Bool, $1) }
+	| STRING_ARRAY { Array(String, $1, 0) }
+	| INT_ARRAY { Array(Int, $1, 0) }
+	| FLOAT_ARRAY { Array(Float, $1, 0) }
+	| BOOL_ARRAY { Array(Bool, $1, 0) }
 
 args_opt:
   /* nothing */ { [] }
