@@ -143,19 +143,40 @@ let translate (sprogram : sprogram) =
         | _ -> L.build_load (snd gv) s builder
       )
     )
-    | SAsn (_, _) -> raise (Failure " Unimplemented")
-    | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
-    | SNot _ -> raise (Failure " Unimplemented")
+    | SAsn (s, e) -> 
+      (* Plan: 
+        e.code || Gen(s, "=", e.addr)  
+      *)
+      let e_addr = build_IR_on_expr builder e in
+      let lv = Hashtbl.find local_variables s in
+      ignore(L.build_store e_addr (snd lv) builder); (* %store %e %s_mem *)
+      e_addr 
+    | SAugAsn (s, ag_op, e) -> 
+      (* Plan: 
+        s = s + e 
+        e.code || Binop(s, e) || assignment   
+      *)
+      let e_addr = build_IR_on_expr builder e in 
+      let lv = Hashtbl.find local_variables s in
+      let sum_addr = L.build_add e_addr (snd lv) "tmp" builder in 
+      ignore(L.build_store sum_addr (snd lv) builder);
+      sum_addr
+    | SNot e -> 
+      let e_addr = build_IR_on_expr builder e in  
+      L.build_not e_addr "tmp" builder
     | SIn (_, _) -> raise (Failure " Unimplemented")
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
     | SCall ("print", [e]) ->
       let llval = build_IR_on_expr builder e in
       L.build_call printf_func [| llval |] "printf" builder
-    | SCall (_, _) -> raise (Failure " Unimplemented")
+    | SCall (fname, args) -> 
+      let (f_addr, sstmt) = StringMap.find fname func_declarations in 
+      let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e) (List.rev args)) in 
+      L.build_call f_addr (Array.of_list llargs) (fname^" result") builder 
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
     (* match sstmt*)
-    | SBreak -> raise (Failure "Unimplemented")
+    | SBreak -> ignore(L.build_ret_void builder); builder
     | SExpr e -> 
       ignore(build_IR_on_expr builder e); builder
     | SFunction _ -> builder
@@ -239,12 +260,31 @@ let translate (sprogram : sprogram) =
       
       L.builder_at_end context end_bb 
       
-    | SFor (st, expr, stmts) -> raise (Failure "Unimplemented")
-    (* 
-       for i in [1. 2. 3]
-       st index, 0 
-       st val, expr[index]
-    *)
+    | SFor (var_name, itr, stmts) -> 
+      (* 
+        SFor(var_name, itr, stmts) -> 
+        HEAD: 
+          itr.code
+          jmp LOOP   
+        LOOP: 
+          - need to store current value of var_name in the symbol table for local variables 
+          stmts.code 
+          jmp HEAD? 
+        END:
+      *)
+
+      let the_function = L.block_parent (L.insertion_block builder) in 
+      let head_bb = L.append_block context "head" the_function in  
+      let loop_bb = L.append_block context "loop" the_function in 
+      let end_bb = L.append_block context "end" the_function in 
+
+      let start_val = build_IR_on_expr builder itr in (* itr.code *)
+      ignore(L.build_br loop_bb builder); (* jmp LOOP *)
+
+      ignore(L.position_at_end loop_bb builder);
+      let variable = L.build_phi [(start_val, head_bb)] var_name builder in 
+
+      build_IR_on_stmt_list builder stmts
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
