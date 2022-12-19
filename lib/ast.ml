@@ -46,7 +46,6 @@ type decl = string * typ
 
 type stmt =
   | Break
-  | Continue
   | Expr of expr
   | Function of string * decl list * typ * stmt list
   | Return of expr
@@ -131,7 +130,6 @@ let string_of_expr_opt = function
 
 let rec string_of_stmt = function
   | Break -> "break\n"
-  | Continue -> "continue\n"
   | Expr e -> string_of_expr e ^ "\n"
   | Function (fname, formals, return_type, block) ->
       "def " ^ fname ^ "(" ^ string_of_formals formals ^ ") -> "

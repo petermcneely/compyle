@@ -22,7 +22,6 @@ and sx =
 
 type sstmt =
   | SBreak
-  | SContinue
   | SExpr of sexpr
   | SFunction of string * decl list * typ * sstmt list
   | SReturn of sexpr
@@ -72,7 +71,6 @@ let string_of_sexpr_opt = function
 
 let rec string_of_sstmt = function
   | SBreak -> "break\n"
-  | SContinue -> "continue\n"
   | SExpr e -> string_of_sexpr e ^ "\n"
   | SFunction (fname, formals, return_type, block) ->
       "def " ^ fname ^ "("

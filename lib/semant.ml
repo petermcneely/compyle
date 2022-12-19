@@ -183,10 +183,10 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
         (stmt : stmt),
-        (top_level : bool) ) : sstmt =
+        (top_level : bool),
+        (func_details : string * typ) ) : sstmt =
     match stmt with
     | Break -> SBreak
-    | Continue -> SContinue
     | Expr e -> SExpr (check_expr (decl_vars, decl_funcs, e))
     | Function (fname, params, rtyp, fbody) ->
         if top_level = false then
@@ -202,11 +202,23 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         in
         List.iter add_var2 params;
         let check_stmt_with_decls st =
-          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st, false)
+          check_stmt
+            (decl_vars_in_scope, decl_funcs_in_scope, st, false, (fname, rtyp))
         in
         let s_fbody = List.map check_stmt_with_decls fbody in
         SFunction (fname, params, rtyp, s_fbody)
-    | Return e -> SReturn (check_expr (decl_vars, decl_funcs, e))
+    | Return e ->
+        let sexpr_ret = check_expr (decl_vars, decl_funcs, e) in
+        let ret_typ = fst sexpr_ret in
+        let func_typ = snd func_details in
+        let func_name = fst func_details in
+        if (not (String.empty = func_name)) && ret_typ != func_typ then
+          raise
+            (Failure
+               ("Function '" ^ func_name ^ "' expects a return type of "
+              ^ string_of_typ func_typ ^ ", but currently returns type "
+              ^ string_of_typ ret_typ));
+        SReturn sexpr_ret
     | If (e, if_block, else_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
         and s_if_block = check ~top_level:false if_block
@@ -247,7 +259,13 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         SDecl (id, t, some_sexpr)
   in
   let check_stmt_with_decls st =
-    check_stmt (var_decls_global, func_decls_global, st, top_level)
+    let dummy_function_details = ("", NoneType) in
+    check_stmt
+      ( var_decls_global,
+        func_decls_global,
+        st,
+        top_level,
+        dummy_function_details )
   in
   let checked_program = List.map check_stmt_with_decls program in
 

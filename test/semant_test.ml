@@ -246,12 +246,18 @@ try
 with Failure e when e = "The main function should take zero arguments and return an int" -> pass_test();
 
 let test_case = "Parses negative ints and floats" in
-let comparing = build_main "a: int = -3
+let actual = build_main "a: int = -3
 \tb: float = -3.0
 \tc: int = 3 - -1
 \td: float = -3.0 - -3.0" in
 let expected = build_expected_main ["a: int(int : -3)"; "b: float(float : -3.)"; "c: int(int : (int : 3) - (int : -1))"; "d: float(float : (float : -3.) - (float : -3.))"] in
-run_test ~debug:false test_case (comparing ^ "\n") expected;
+run_test ~debug:false test_case (actual ^ "\n") expected;
+
+let test_case = "Semantically checks return type of function" in
+let actual = "def main() -> int:\r\n\treturn 1.0" in
+try
+  run_test ~debug:true test_case (actual ^ "\n") [];
+with Failure e when e = "Function 'main' expects a return type of int, but currently returns type float" -> pass_test();
 
 (*
 Boiler plate set up for processing the results of the tests   

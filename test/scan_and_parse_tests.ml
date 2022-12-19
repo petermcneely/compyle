@@ -167,8 +167,8 @@ let expected = [ "for x in [1, 2, 3]:"; "y = 5"; "break"; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses While Loop" in
-let comparing = "while x > 5:\r\n\n\ty = 5\r\n\n\tcontinue\r\n" in
-let expected = [ "while x > 5:"; "y = 5"; "continue"; "" ] in
+let comparing = "while x > 5:\r\n\n\ty = 5\r\n" in
+let expected = [ "while x > 5:"; "y = 5"; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses multi-dimensional arrays" in
