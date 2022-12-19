@@ -34,6 +34,7 @@ type expr =
   | NotIn of expr * expr
   | Call of string * expr list
 
+
 type decl = string * typ
 
 type stmt =
@@ -49,6 +50,7 @@ type stmt =
   | Decl of string * typ * expr option
 
 type program = stmt list
+
 
 (* Pretty-printing functions *)
 let string_of_aug_op = function

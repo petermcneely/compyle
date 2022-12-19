@@ -32,6 +32,30 @@ let translate (sprogram : sprogram) =
     | _ -> raise (Failure "Unimplemented")
   in
 
+  let global_vars : L.llvalue StringMap.t = 
+    let global_var m (sstmt) = 
+      (match sstmt with 
+      | SDecl (name, typ, e) -> 
+        let i = 
+        (
+          match e with 
+          | None -> 0
+          | Some(e') -> 
+            let (t, sx) = e' in 
+            (
+              match sx with
+              | SIntLit i -> i 
+              | SBoolLit b -> (if b = true then 1 else 0)
+              | _ -> 0 
+            ) 
+        ) in 
+          let init = L.const_int (ltype_of_typ typ) i in 
+          let gl_addr = L.define_global name init the_module in 
+          StringMap.add name gl_addr m
+      | _ -> m)
+    in
+    List.fold_left (global_var) StringMap.empty sprogram 
+  in 
   (* TODO: lookup: string -> llvalue 
     Description: Searches for a variable 'n' first locally and then globally and returns its value if found   
   *)
@@ -51,6 +75,9 @@ let translate (sprogram : sprogram) =
       | _ -> m in  
     List.fold_left func_decl StringMap.empty sprogram  
   in 
+  
+
+
   (* LLVM insists each basic block end with exactly one "terminator"
   instruction that transfers control.  This function runs "instr builder"
   if the current block does not already have a terminator.  Used,
@@ -76,14 +103,48 @@ let translate (sprogram : sprogram) =
     | SArrayLit l -> raise (Failure "Unimplemented")
     | STupleLit _ -> raise (Failure " Unimplemented")
     | SBinop (e1, op, e2) -> 
-      let e1_addr = build_IR_on_expr builder e1 in 
-      let e2_addr = build_IR_on_expr builder e2 in 
-      (
-        match op with 
-          | Add -> L.build_add e1_addr e2_addr "tmp" builder 
-          | Sub -> 
-          | _ -> raise (Failure "hello") 
-      )
+      (let ty = fst e1 in  
+      let e1' = build_IR_on_expr builder e1
+      and e2' = build_IR_on_expr builder e2 in
+      match ty with
+        | Int -> (match op with
+            A.Add     -> L.build_add
+            | A.Sub     -> L.build_sub
+            | A.Mult    -> L.build_mul
+            | A.Div     -> L.build_sdiv
+            | A.Mod     -> L.build_srem
+            | A.Eq       -> L.build_icmp L.Icmp.Eq
+            | A.Neq     -> L.build_icmp L.Icmp.Ne
+            | A.Gt      -> L.build_icmp L.Icmp.Sgt
+            | A.Lt      -> L.build_icmp L.Icmp.Slt
+            | A.Geq      -> L.build_icmp L.Icmp.Sge
+            | A.Leq      -> L.build_icmp L.Icmp.Sle
+            | _ -> raise(Failure "Developer Error")
+            ) e1' e2' "tmp" builder
+        | Float ->
+            (match op with
+            A.Add     -> L.build_fadd
+            | A.Sub     -> L.build_fsub
+            | A.Mult    -> L.build_fmul
+            | A.Div     -> L.build_fdiv
+            | A.Mod     -> L.build_frem
+            | A.Eq       -> L.build_fcmp L.Fcmp.Oeq
+            | A.Neq     -> L.build_fcmp L.Fcmp.One
+            | A.Gt      -> L.build_fcmp L.Fcmp.Ogt
+            | A.Lt      -> L.build_fcmp L.Fcmp.Olt
+            | A.Geq      -> L.build_fcmp L.Fcmp.Oge
+            | A.Leq      -> L.build_fcmp L.Fcmp.Ole
+            | _ -> raise(Failure "Developer Error")
+            ) e1' e2' "tmp" builder
+        | Bool -> 
+            (match op with
+            | A.Eq       -> L.build_icmp L.Icmp.Eq
+            | A.Neq     -> L.build_icmp L.Icmp.Ne
+            | A.And     -> L.build_and
+            | A.Or      -> L.build_or
+            | _ -> raise(Failure "Developer Error")
+            ) e1' e2' "tmp" builder
+        | _ -> raise(Failure "Type Error"))
     | SId s -> L.build_load (lookup s) s builder (* %s = load %(value of s)*)
     | SAsn (s, e) -> 
       (* Plan: 
@@ -92,7 +153,6 @@ let translate (sprogram : sprogram) =
       let e_addr = build_IR_on_expr builder e in 
       ignore(L.build_store e_addr (lookup s) builder); (* %store %e %s_mem *)
       e_addr 
-
     | SAugAsn (s, ag_op, e) -> 
       (* Plan: 
         s = s + e 
@@ -102,11 +162,15 @@ let translate (sprogram : sprogram) =
       let sum_addr = L.build_add e_addr (lookup s) "tmp" builder in 
       ignore(L.build_store sum_addr (lookup s) builder);
       sum_addr
-
-    | SNot _ -> raise (Failure " Unimplemented")
+    | SNot e -> 
+      let e_addr = build_IR_on_expr builder e in  
+      L.build_not e_addr "tmp" builder  
     | SIn (_, _) -> raise (Failure " Unimplemented")
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
-    | SCall (_, _) -> raise (Failure " Unimplemented")
+    | SCall (fname, args) -> 
+      let (f_addr, sstmt) = StringMap.find fname func_declarations in 
+      let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e) (List.rev args)) in 
+      L.build_call f_addr (Array.of_list llargs) (fname^" result") builder 
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
     (* match sstmt*)
