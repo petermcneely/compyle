@@ -31,12 +31,14 @@ let translate (sprogram : sprogram) =
   let global_stringptrs = Hashtbl.create 100 in 
 
   (* Return the LLVM type for a MicroC type *)
-  let ltype_of_typ = function
+  let rec ltype_of_typ = function
       A.Int   -> i32_t
     | A.Bool  -> i1_t
     | A.Float -> f32_t
     | A.String -> pointer_i8_t 
-    | _ -> raise (Failure "Unimplemented")
+    | A.Array (t,s) -> 
+     (L.array_type (ltype_of_typ t) s)
+    | _ -> raise (Failure "Unimpented")
   in
 
   let printf_t : L.lltype =
@@ -87,8 +89,23 @@ let translate (sprogram : sprogram) =
     | SFloatLit i -> L.const_float f32_t i
     | SStringLit s -> L.const_string context s
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
-    | SArrayLit l -> raise (Failure "Unimplemented")
-    | STupleLit _ -> raise (Failure " Unimplemented")
+    | SArrayLit l -> (let head = List.hd l in
+    let head_type, _ = head in
+    let size = List.length l in
+    let arr = Array.of_list l in
+    let sarr = Array.map (build_IR_on_expr builder) arr in
+    match head_type with
+    | Int -> L.const_array (L.array_type i32_t size) sarr
+    | Float -> L.const_array (L.array_type f32_t size) sarr
+    | Bool -> L.const_array (L.array_type i1_t size) sarr
+    (*| String -> L.const_array (L.array_type (s32_t size)*)
+    (*| Tuple*)
+    | _ -> raise (Failure "Multi-Dim Array"))
+    | STupleLit t -> (let arr = Array.of_list t in
+    let e =  Array.map (build_IR_on_expr builder) arr in
+    let ty = Array.map L.type_of e in
+    let s_t = L.struct_type context ty in
+    L.const_struct context e)
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
       let e1' = build_IR_on_expr builder e1
@@ -137,7 +154,7 @@ let translate (sprogram : sprogram) =
         match fst var with
           | A.String -> snd var
           | _ -> L.build_load (snd var) s builder)
-    | SAsn (_, _) -> raise (Failure " Unimplemented")
+    | SAsn (_, _) -> raise (Failure " Unimple")
     | SAugAsn (_, _, _) -> raise (Failure " Unimplemented")
     | SNot _ -> raise (Failure " Unimplemented")
     | SIn (_, _) -> raise (Failure " Unimplemented")
@@ -146,7 +163,7 @@ let translate (sprogram : sprogram) =
       let gsp = build_gsp builder (fst e) in
       L.build_call printf_func [| gsp; (build_IR_on_expr builder e) |]
         "printf" builder
-    | SCall (_, _) -> raise (Failure " Unimplemented")
+    | SCall (_, _) -> raise (Failure " Unimplemente")
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) = function
     (* match sstmt*)
