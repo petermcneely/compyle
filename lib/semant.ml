@@ -197,6 +197,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         add_func (decl_vars, decl_funcs, Function (fname, params, rtyp, fbody));
         let decl_vars_in_scope = Hashtbl.copy decl_vars in
         let decl_funcs_in_scope = Hashtbl.copy decl_funcs in
+
         let add_var2 (id, t) =
           add_var (decl_vars_in_scope, decl_funcs_in_scope, id, t)
         in
@@ -220,23 +221,32 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               ^ string_of_typ ret_typ));
         SReturn sexpr_ret
     | If (e, if_block, else_block) ->
+        let check_stmt2 stmt =
+          check_stmt (decl_vars, decl_funcs, stmt, false, func_details)
+        in
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_if_block = check ~top_level:false if_block
-        and s_else_block = check ~top_level:false else_block in
+        and s_if_block = List.map check_stmt2 if_block
+        and s_else_block = List.map check_stmt2 else_block in
         if t = Bool then SIf ((t, e'), s_if_block, s_else_block)
         else raise (Failure "Expect boolean expression")
     | While (e, while_block) ->
+        let check_stmt2 stmt =
+          check_stmt (decl_vars, decl_funcs, stmt, false, func_details)
+        in
         let t, e' = check_expr (decl_vars, decl_funcs, e)
-        and s_while_block = check ~top_level:false while_block in
+        and s_while_block = List.map check_stmt2 while_block in
         if t = Bool then SWhile ((t, e'), s_while_block)
         else raise (Failure "Expect boolean expression")
     | For (id, e, for_block) ->
+        let check_stmt2 stmt =
+          check_stmt (decl_vars, decl_funcs, stmt, false, func_details)
+        in
         let t, e' = check_expr (decl_vars, decl_funcs, e) in
         let s_stmt =
           match t with
           | Array (array_elem_typ, _) ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
-              SFor (id, (t, e'), check ~top_level:false for_block)
+              SFor (id, (t, e'), List.map check_stmt2 for_block)
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
