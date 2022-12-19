@@ -1,3 +1,4 @@
+c: int = 4
 
 def main() -> int:
 	b: int = 3

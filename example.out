@@ -1,0 +1,13 @@
+
+
+Parsed Program: 
+
+c: int(int : 4)
+def main() -> int:
+b: int(int : 3)
+if (bool : True):
+a: int(int : 2)
+return (int : a)
+else:
+return (int : b)
+<EOF>
