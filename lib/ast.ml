@@ -1,5 +1,14 @@
-type typ = Int | Bool | Float | String | Tuple | Array of typ * int | EmptyArray | NoneType
-type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp | AAFDiv
+type typ =
+  | Int
+  | Bool
+  | Float
+  | String
+  | Tuple
+  | Array of typ * int
+  | EmptyArray
+  | NoneType
+
+type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp
 
 type bin_op =
   | Add
@@ -8,7 +17,6 @@ type bin_op =
   | Div
   | Mod
   | Exp
-  | FDiv
   | And
   | Or
   | Eq
@@ -56,7 +64,6 @@ let string_of_aug_op = function
   | AADiv -> "/="
   | AAMod -> "%="
   | AAExp -> "**="
-  | AAFDiv -> "//="
 
 let string_of_bin_op = function
   | Add -> "+"
@@ -65,7 +72,6 @@ let string_of_bin_op = function
   | Div -> "/"
   | Mod -> "%"
   | Exp -> "**"
-  | FDiv -> "//"
   | And -> "and"
   | Or -> "or"
   | Eq -> "=="
@@ -84,15 +90,14 @@ let rec string_of_typ = function
   | Tuple -> "tuple"
   | EmptyArray -> "[]"
   | Array (t, dimensions) -> string_of_typ t ^ string_of_dimensions dimensions
-and string_of_dimensions (dimensions: int): string =
-  if dimensions = 0 then ""
-  else
-    "[]" ^ string_of_dimensions (dimensions - 1)
+
+and string_of_dimensions (dimensions : int) : string =
+  if dimensions = 0 then "" else "[]" ^ string_of_dimensions (dimensions - 1)
 
 let string_of_decl (d : string * typ) : string =
   fst d ^ ": " ^ string_of_typ (snd d)
 
-let string_of_formals (f: (string * typ) list) =
+let string_of_formals (f : (string * typ) list) =
   String.concat ", " (List.map (fun x -> string_of_decl x) f)
 
 let rec string_of_expr = function
@@ -126,9 +131,8 @@ let rec string_of_stmt = function
   | Break -> "break\n"
   | Expr e -> string_of_expr e ^ "\n"
   | Function (fname, formals, return_type, block) ->
-      "def " ^ fname ^ "("
-      ^ string_of_formals formals
-      ^ ") -> " ^ string_of_typ return_type ^ ":" ^ string_of_block block
+      "def " ^ fname ^ "(" ^ string_of_formals formals ^ ") -> "
+      ^ string_of_typ return_type ^ ":" ^ string_of_block block
   | Return e -> "return " ^ string_of_expr e ^ "\n"
   | If (e, if_block, elif_blocks) ->
       "if " ^ string_of_expr e ^ ":" ^ string_of_block if_block
@@ -137,7 +141,8 @@ let rec string_of_stmt = function
       "while " ^ string_of_expr e ^ ":" ^ string_of_block block
   | For (v, e, b) ->
       "for " ^ v ^ " in " ^ string_of_expr e ^ ":" ^ string_of_block b
-  | Decl (id, typ, expr_opt) -> string_of_decl (id, typ) ^ string_of_expr_opt expr_opt ^ "\n"
+  | Decl (id, typ, expr_opt) ->
+      string_of_decl (id, typ) ^ string_of_expr_opt expr_opt ^ "\n"
 
 and string_of_elif_blocks elif_blocks =
   String.concat "\n"

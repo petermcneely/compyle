@@ -2,7 +2,7 @@ open Ast
 open Sast
 module StringMap = Map.Make (String)
 
-let rec check ?(top_level: bool = true) (program : program) : sprogram =
+let rec check ?(top_level : bool = true) (program : program) : sprogram =
   (* in-place mutation *)
   let var_decls_global = Hashtbl.create 100 in
   let func_decls_global = Hashtbl.create 100 in
@@ -23,8 +23,9 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
   in
   let find_func ((decl_funcs : ('a, 'c) Hashtbl.t), (fname : string)) : stmt =
     try Hashtbl.find decl_funcs fname
-    with Not_found -> 
-      if (fname = "main") then raise (Failure ("main function required but not defined")) 
+    with Not_found ->
+      if fname = "main" then
+        raise (Failure "main function required but not defined")
       else raise (Failure ("Unbound function " ^ fname))
   in
 
@@ -85,8 +86,9 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
               let head = List.hd s_el in
               let head_type, _ = head in
               let resolve_array_type = function
-              |  Array (array_typ, dimension) -> Array (array_typ, dimension+1)
-              |  _ as s -> Array (s,1) 
+                | Array (array_typ, dimension) ->
+                    Array (array_typ, dimension + 1)
+                | _ as s -> Array (s, 1)
               in
               (resolve_array_type head_type, SArrayLit s_el)
         in
@@ -100,26 +102,38 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         if t1 = t2 then
           let t =
             match bin_op with
-            | (Add | Sub | Mult | FDiv | Mod | Exp) when t1 = Int || t1 = Float -> t1
+            | (Add | Sub | Mult | Div | Mod | Exp) when t1 = Int || t1 = Float
+              ->
+                t1
             | (And | Or) when t1 = Bool -> t1
-            | (Eq | Neq) -> Bool
+            | Eq | Neq -> Bool
             | (Gt | Lt | Geq | Leq) when t1 = Float || t1 = Int -> Bool
-            | _ -> raise (Failure ("Cannot perform '" ^ string_of_bin_op bin_op ^ "' on '" ^ string_of_typ t1 ^ "'"))
+            | _ ->
+                raise
+                  (Failure
+                     ("Cannot perform '" ^ string_of_bin_op bin_op ^ "' on '"
+                    ^ string_of_typ t1 ^ "'"))
           in
           (t, SBinop ((t1, e1'), bin_op, (t2, e2')))
         else
-          raise (Failure ("Both operands need to be the same type when performing a '" ^ string_of_bin_op bin_op ^ "'. Received '" ^ string_of_typ t1 ^ "' and '" ^ string_of_typ t2 ^ "'"))
+          raise
+            (Failure
+               ("Both operands need to be the same type when performing a '"
+              ^ string_of_bin_op bin_op ^ "'. Received '" ^ string_of_typ t1
+              ^ "' and '" ^ string_of_typ t2 ^ "'"))
     | Id var -> (find_var_type (decl_vars, var), SId var)
     | Asn (var, e) ->
-        let t = find_var_type (decl_vars, var) 
+        let t = find_var_type (decl_vars, var)
         and t', e' = check_expr (decl_vars, decl_funcs, e) in
-        if t' = NoneType then raise (Failure "Cannot assign variable to nonetype")
+        if t' = NoneType then
+          raise (Failure "Cannot assign variable to nonetype")
         else if t = t' then (t, SAsn (var, (t', e')))
         else raise (Failure "Incompatible type")
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type (decl_vars, var)
         and t2, e' = check_expr (decl_vars, decl_funcs, e) in
-        if t2 = NoneType then raise (Failure "Cannot assign variable to nonetype")
+        if t2 = NoneType then
+          raise (Failure "Cannot assign variable to nonetype")
         else if t1 = t2 then (t1, SAugAsn (var, aug_op, (t2, e')))
         else raise (Failure "Incompatible type")
     | Not e ->
@@ -181,13 +195,17 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
       ( (decl_vars : ('a, 'b) Hashtbl.t),
         (decl_funcs : ('a, 'c) Hashtbl.t),
         (stmt : stmt),
-        (top_level: bool),
-        (func_details: string * typ) ) : sstmt =
+        (top_level : bool),
+        (func_details : string * typ) ) : sstmt =
     match stmt with
     | Break -> SBreak
     | Expr e -> SExpr (check_expr (decl_vars, decl_funcs, e))
     | Function (fname, params, rtyp, fbody) ->
-        if top_level = false then raise (Failure ("Nested function definitions are not allowed. Received a definition for a function named: " ^ fname));
+        if top_level = false then
+          raise
+            (Failure
+               ("Nested function definitions are not allowed. Received a \
+                 definition for a function named: " ^ fname));
         add_func (decl_vars, decl_funcs, Function (fname, params, rtyp, fbody));
         let decl_vars_in_scope = Hashtbl.copy decl_vars in
         let decl_funcs_in_scope = Hashtbl.copy decl_funcs in
@@ -196,18 +214,23 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         in
         List.iter add_var2 params;
         let check_stmt_with_decls st =
-          check_stmt (decl_vars_in_scope, decl_funcs_in_scope, st, false, (fname, rtyp))
+          check_stmt
+            (decl_vars_in_scope, decl_funcs_in_scope, st, false, (fname, rtyp))
         in
         let s_fbody = List.map check_stmt_with_decls fbody in
         SFunction (fname, params, rtyp, s_fbody)
-    | Return e -> 
-      let sexpr_ret = check_expr (decl_vars, decl_funcs, e) in
-      let ret_typ = fst sexpr_ret in
-      let func_typ = snd func_details in
-      let func_name = fst func_details in
-      if not (String.empty = func_name) && ret_typ != func_typ then
-        raise (Failure ("Function '" ^ func_name ^ "' expects a return type of " ^ string_of_typ func_typ ^ ", but currently returns type " ^ string_of_typ ret_typ));
-      SReturn (sexpr_ret)
+    | Return e ->
+        let sexpr_ret = check_expr (decl_vars, decl_funcs, e) in
+        let ret_typ = fst sexpr_ret in
+        let func_typ = snd func_details in
+        let func_name = fst func_details in
+        if (not (String.empty = func_name)) && ret_typ != func_typ then
+          raise
+            (Failure
+               ("Function '" ^ func_name ^ "' expects a return type of "
+              ^ string_of_typ func_typ ^ ", but currently returns type "
+              ^ string_of_typ ret_typ));
+        SReturn sexpr_ret
     | If (e, if_block, else_block) ->
         let t, e' = check_expr (decl_vars, decl_funcs, e)
         and s_if_block = check ~top_level:false if_block
@@ -231,47 +254,67 @@ let rec check ?(top_level: bool = true) (program : program) : sprogram =
         s_stmt
     | Decl (id, t, expr_opt) ->
         add_var (decl_vars, decl_funcs, id, t);
-        let some_sexpr = match expr_opt with
-            None -> None
+        let some_sexpr =
+          match expr_opt with
+          | None -> None
           | Some e ->
               let sexpr = check_expr (decl_vars, decl_funcs, e) in
-              if t = fst sexpr then
-                Some sexpr
+              if t = fst sexpr then Some sexpr
               else
-                raise (Failure ("Incompatible type. Expected Var type:" ^ string_of_typ t ^ " Received expression type: " ^ string_of_typ (fst sexpr))) in
+                raise
+                  (Failure
+                     ("Incompatible type. Expected Var type:" ^ string_of_typ t
+                    ^ " Received expression type: "
+                     ^ string_of_typ (fst sexpr)))
+        in
         SDecl (id, t, some_sexpr)
   in
   let check_stmt_with_decls st =
     let dummy_function_details = ("", NoneType) in
-    check_stmt (var_decls_global, func_decls_global, st, top_level, dummy_function_details)
+    check_stmt
+      ( var_decls_global,
+        func_decls_global,
+        st,
+        top_level,
+        dummy_function_details )
   in
   let checked_program = List.map check_stmt_with_decls program in
 
   if top_level then
-    let main_stmt = find_func (func_decls_global, "main") in (* check if main function is defined *)
-    
-    let _ = match main_stmt with
-      | Function (fname, params, rtyp, fbody) -> if (((List.length params) > 0) || (rtyp != Int)) then
-          raise (Failure "The main function should take zero arguments and return an int")
-      | _ -> raise (Failure "Developer error") in
+    let main_stmt = find_func (func_decls_global, "main") in
+
+    (* check if main function is defined *)
+    let _ =
+      match main_stmt with
+      | Function (fname, params, rtyp, fbody) ->
+          if List.length params > 0 || rtyp != Int then
+            raise
+              (Failure
+                 "The main function should take zero arguments and return an \
+                  int")
+      | _ -> raise (Failure "Developer error")
+    in
 
     let check_top_level_stmt sstmt =
       match sstmt with
       | SFunction _ -> sstmt
-      | SDecl (id, t, expr_opt) ->
-        (
+      | SDecl (id, t, expr_opt) -> (
           match expr_opt with
-            | None -> sstmt
-            | Some sexpr ->
-              (
-                match snd sexpr with
-                  | SIntLit _ | SBoolLit _ | SFloatLit _ | SStringLit _ -> sstmt
-                  | _ -> raise (Failure ("Global variables can only be assigned to constant literals. Received: " ^ string_of_sstmt sstmt))
-              )
-        )
-      | _ -> raise (Failure ("Top level statements can only be global variable declarations or function definitions. Received: " ^ string_of_sstmt sstmt))
+          | None -> sstmt
+          | Some sexpr -> (
+              match snd sexpr with
+              | SIntLit _ | SBoolLit _ | SFloatLit _ | SStringLit _ -> sstmt
+              | _ ->
+                  raise
+                    (Failure
+                       ("Global variables can only be assigned to constant \
+                         literals. Received: " ^ string_of_sstmt sstmt))))
+      | _ ->
+          raise
+            (Failure
+               ("Top level statements can only be global variable declarations \
+                 or function definitions. Received: " ^ string_of_sstmt sstmt))
     in
 
     List.map check_top_level_stmt checked_program
-  else
-    checked_program
+  else checked_program

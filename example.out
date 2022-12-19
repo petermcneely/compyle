@@ -7,6 +7,15 @@ source_filename = "compyle"
 
 declare i32 @printf(i8*, ...)
 
+
+Parsed Program: 
+
+def main() -> int:
+if (bool : True):
+return (int : 0)
+else:
+return (int : 2)
+<EOF>
 define i32 @main() {
 entry:
   %y = alloca i8*, align 8
