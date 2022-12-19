@@ -167,7 +167,8 @@ let translate (sprogram : sprogram) =
       *)
       let e_addr = build_IR_on_expr builder e local_variables global_variables in 
       let lv = Hashtbl.find local_variables s in
-      let sum_addr = L.build_add e_addr (snd lv) "tmp" builder in 
+      let loaded = L.build_load (snd lv) "" builder in
+      let sum_addr = L.build_add e_addr loaded "tmp" builder in 
       ignore(L.build_store sum_addr (snd lv) builder);
       sum_addr
     | SNot e -> 
