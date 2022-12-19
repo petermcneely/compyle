@@ -5,6 +5,8 @@ def tupes() -> int:
     x: tuple = (True, 5)
     y: bool = True
     z = 5
+    if 5 in x:
+        print("yay")
     while y == True and z > 3:
         if 5 in x:
             break
@@ -14,8 +16,6 @@ def tupes() -> int:
 
 def main() -> int:
     q: int = tupes()
-    if 5 in q:
-        print("yay")
     r: int = q + 5
     print(r)
     m: string = "Hello World"
