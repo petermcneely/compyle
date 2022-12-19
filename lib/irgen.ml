@@ -67,7 +67,19 @@ let translate (sprogram : sprogram) =
     | SFloatLit i -> L.const_float f32_t i
     | SStringLit s -> L.const_string context s
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
-    | SArrayLit l -> raise (Failure "Unimplemented")
+    | SArrayLit l -> (* get type and size of array; initialize array*)
+      (let head = List.hd l in
+      let head_type, _ = head in
+      let size = List.length l in
+      let arr = Array.of_list l in
+      let sarr = Array.map (build_IR_on_expr builder) arr in
+      match head_type with
+      | Int -> L.const_array (L.array_type i32_t size) sarr
+      | Float -> L.const_array (L.array_type f32_t size) sarr
+      | Bool -> L.const_array (L.array_type i1_t size) sarr
+      (*| String -> L.const_array (L.array_type (s32_t size)*)
+      (*| Tuple*)
+      | _ -> raise (Failure "Multi-Dim Array"))
     | STupleLit _ -> raise (Failure " Unimplemented")
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
