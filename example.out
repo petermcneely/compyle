@@ -1,16 +1,10 @@
-; ModuleID = 'compyle'
-source_filename = "compyle"
 
-define i32 @main() {
-entry:
-  br i1 true, label %then, label %else
 
-then:                                             ; preds = %entry
-  ret i32 0
+Parsed Program: 
 
-else:                                             ; preds = %entry
-  ret i32 2
-
-end_if:                                           ; No predecessors!
-  ret i32 0
-}
+def main() -> int:
+if (bool : True):
+return (int : 0)
+else:
+return (int : 2)
+<EOF>
