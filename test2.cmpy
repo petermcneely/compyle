@@ -23,4 +23,6 @@ def while_loop() -> int:
 
 def main() -> int:
     b: int = while_loop()
+    p: bool = not x
+    print(p)
     return 0

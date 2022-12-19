@@ -14,6 +14,10 @@ def tupes() -> int:
 
 def main() -> int:
     q: int = tupes()
+    if 5 in q:
+        print("yay")
     r: int = q + 5
     print(r)
+    m: string = "Hello World"
+    print(m)
     return 0
