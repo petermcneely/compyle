@@ -40,15 +40,23 @@ let translate (sprogram : sprogram) =
   let printf_func : L.llvalue =
     L.declare_function "printf" printf_t the_module in
 
-  let build_gsp builder = function
-    | A.Int -> L.build_global_stringptr "%d" "intgsp" builder
-    | A.Float -> L.build_global_stringptr "%f" "floatgsp" builder
-    | A.Bool -> L.build_global_stringptr "%d" "boolgsp" builder
-    | typ -> raise (Failure ("the built in formatting string for " ^ (A.string_of_typ typ) ^ " is not supported")) in
-
   let local_variables = Hashtbl.create 100 in
   let global_variables = Hashtbl.create 100 in
   let global_formatters = Hashtbl.create 100 in
+
+  let get_or_add_global_formatter gsp key builder =
+    if not (Hashtbl.mem global_formatters key) then
+      let ret = gsp key builder in
+      Hashtbl.add global_formatters key ret;
+      ret
+    else
+      Hashtbl.find global_formatters key in
+
+  let build_gsp builder = function
+    | A.Int -> get_or_add_global_formatter (L.build_global_stringptr "%d") "intgsp" builder
+    | A.Float -> get_or_add_global_formatter (L.build_global_stringptr "%f") "floatgsp" builder
+    | A.Bool -> get_or_add_global_formatter (L.build_global_stringptr "%d") "boolgsp" builder
+    | typ -> raise (Failure ("the built in formatting string for " ^ (A.string_of_typ typ) ^ " is not supported")) in
 
   let func_declarations : (L.llvalue * sstmt) StringMap.t = 
     let func_decl m sstmt = 
@@ -168,7 +176,13 @@ let translate (sprogram : sprogram) =
     | SNotIn (_, _) -> raise (Failure " Unimplemented")
     | SCall ("print", [e]) ->
       let llval = build_IR_on_expr builder e in
-      L.build_call printf_func [| llval |] "printf" builder
+      let arr = if (fst e) = A.String then
+        [| llval |]
+      else
+        let gsp = build_gsp builder (fst e) in
+        [| gsp; llval|]
+      in
+      L.build_call printf_func arr "printf" builder
     | SCall (fname, args) -> 
       let (f_addr, sstmt) = StringMap.find fname func_declarations in 
       let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e) (List.rev args)) in 
