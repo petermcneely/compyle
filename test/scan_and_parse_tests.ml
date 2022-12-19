@@ -57,12 +57,13 @@ let test_case =
 in
 let program =
   "def add(x: int, y: int) -> int:\r\n\
-   \"\"\"\r\n\n\
-   this adds two integers\r\n\n\
-   \"\"\"\r\n\n\
-   \tsum: int\r\n\n\
-   \tsum = x + y\r\n\n\
-   \treturn sum\r\n\n\
+   \"\"\"\r\n\
+   this adds two integers\r\n\
+   \"\"\"\r\n\
+   \tsum: int # declare the variable sum\r\n\
+   # then assign a value to the variable\r\n\
+   \tsum = x + y\r\n\
+   \treturn sum\r\n\
    print(add(x,y))\r\n"
 in
 let expected =

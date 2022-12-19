@@ -5,14 +5,6 @@
   open Parser
   open Lexing
   open Lexing_stack
-
-  let print_position position =
-    print_string ("position: {\n");
-    print_string ("\tpos_fname: " ^ position.pos_fname ^ "\n");
-    print_string ("\tpos_lnum: " ^ string_of_int position.pos_lnum ^ "\n");
-    print_string ("\tpos_bol: " ^ string_of_int position.pos_bol ^ "\n");
-    print_string ("\tpos_cnum: " ^ string_of_int position.pos_cnum ^ "\n");
-    print_string ("}\n")
 }
 
 (*
@@ -25,6 +17,8 @@ let sign = ['+' '-']
 let exponent = (e(sign)?digit+)
 let float = (digit+('.'))|(digit+('.')digit+) | ((digit)+exponent)|(digit*('.')digit+exponent?)
 let newline = ('\n'|"\r\n")
+let whitespace = [' ' '\t']
+let single_line_comment = '#' [^ '\r' '\n']*
 let multi_line_comment = "\"\"\""
 let almost_ascii = [
   '!' '#' '$' '%' '&' '\'' '(' ')' '*' '+' ',' '-' '.'
@@ -72,9 +66,7 @@ rule token manager = parse
 and code manager = parse
 | [' ']     { token manager lexbuf }
 | newline? multi_line_comment  { multi_comment manager lexbuf }
-| '#'       { single_comment manager lexbuf }
-
-| (newline | ' ' | '\t')* newline {
+| (((whitespace* single_line_comment? newline)* whitespace* single_line_comment?) newline){
   (*
     From the LRM: A logical line that contains only spaces, tabs, formfeeds and possibly a comment,
     is ignored (i.e., no NEWLINE token is generated).
@@ -170,7 +162,3 @@ and tab manager = parse
 and multi_comment manager = parse
   | multi_line_comment { token manager lexbuf }
   | _                  { multi_comment manager lexbuf }
-
-and single_comment manager = parse
-  | newline { token manager lexbuf }
-  | _    { single_comment manager lexbuf }
