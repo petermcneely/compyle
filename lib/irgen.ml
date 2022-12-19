@@ -80,7 +80,11 @@ let translate (sprogram : sprogram) =
       (*| String -> L.const_array (L.array_type (s32_t size)*)
       (*| Tuple*)
       | _ -> raise (Failure "Multi-Dim Array"))
-    | STupleLit _ -> raise (Failure " Unimplemented")
+    | STupleLit t -> (let arr = Array.of_list t in
+        let e =  Array.map (build_IR_on_expr builder) arr in
+        let ty = Array.map L.type_of e in
+        let s_t = L.struct_type context ty in
+        L.const_struct context e)
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
       let e1' = build_IR_on_expr builder e1
