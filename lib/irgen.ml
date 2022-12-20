@@ -187,8 +187,6 @@ let translate (sprogram : sprogram) =
     | SNot e -> 
       let e_addr = build_IR_on_expr builder e local_variables global_variables in  
       L.build_not e_addr "tmp" builder
-    | SIn (_, _) -> raise (Failure " Unimplemented")
-    | SNotIn (_, _) -> raise (Failure " Unimplemented")
     | SCall ("print", [e]) ->
       let llval = build_IR_on_expr builder e local_variables global_variables in
       let arr = if (fst e) = A.String then

@@ -139,8 +139,6 @@ expr:
 	| expr AND expr   { Binop($1, And, $3) }
 	| expr OR expr    { Binop($1, Or, $3)  }
 	| NOT expr        { Not($2)      }
-	| expr IN expr { In($1, $3) }
-	| expr NOT IN expr { NotIn($1, $4) }
 
 typ:
 	INT { Int }
