@@ -4,9 +4,6 @@ def fib(n: int) -> int:
 	else:
 		return fib(n - 1) + fib(n - 2)
 
-def foo() -> None:
-	print("returning none")
-
 def main() -> int:
 	c: tuple<bool, int, float> = (True,2,3.0)
 	b: int = 0
