@@ -270,13 +270,7 @@ let translate (sprogram : sprogram) =
       add_terminal (L.builder_at_end context then_bb) build_br_end;
       add_terminal (L.builder_at_end context else_bb) build_br_end;
 
-      let count = L.fold_left_instrs (fun agg _ -> agg + 1) 0 end_bb in
-      if count > 1 then 
-        L.builder_at_end context end_bb 
-      else (
-        L.delete_block end_bb;
-        L.builder_at_end context else_bb
-      )
+      L.builder_at_end context end_bb
     | SWhile (e, sl) -> 
       (*
       FNAME:
