@@ -1,2 +1,3 @@
-x: bool[]
-x = [True, False]
+def main() -> int:
+	x: bool[] = [True, False]
+	return 0
