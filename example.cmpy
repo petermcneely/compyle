@@ -2,9 +2,11 @@ def main() -> int:
 	x: int = 3
 	while True:
 		x += 1
-		while True:
-			return 1
-		# while_end
+		if x < 5:
+			x += 1
+		else:
+			x -= 1
 	# while_end
 
+	print(x)
 	return 0
