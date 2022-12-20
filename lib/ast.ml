@@ -52,7 +52,6 @@ type stmt =
   | If of expr * stmt list * stmt list
   | While of expr * stmt list
   | For of string * expr * stmt list
-  | Print of expr
   | Decl of string * typ * expr option
 
 type program = stmt list
@@ -142,7 +141,6 @@ let rec string_of_stmt = function
       "while " ^ string_of_expr e ^ ":" ^ string_of_block block
   | For (v, e, b) ->
       "for " ^ v ^ " in " ^ string_of_expr e ^ ":" ^ string_of_block b
-  | Print e -> "print(" ^ string_of_expr e ^ ")\n"
   | Decl (id, typ, expr_opt) ->
       string_of_decl (id, typ) ^ string_of_expr_opt expr_opt ^ "\n"
 

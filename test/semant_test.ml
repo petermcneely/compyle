@@ -62,7 +62,7 @@ in
 The actual test cases   
 *)
 let test_case =
-  "Scans, parses, and generates the ast for the hello world program"
+  "Scans, parses, semantically checks, and generates the sast for the hello world program"
 in
 let actual =
   "def add(x: int, y: int) -> int:\r\n\
@@ -87,7 +87,7 @@ let expected =
     "def main() -> int:";
     "x: int(int : 5)";
     "y: int(int : 6)";
-    "print((int : add((int : x), (int : y))))";
+    "(int : print((int : add((int : x), (int : y)))))";
     "";
   ]
 in
@@ -287,7 +287,7 @@ run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks print" in
 let actual = build_main "print(\"string\")" in
-let expected = build_expected_main [ "print((string : \"string\"))" ] in
+let expected = build_expected_main [ "(int : print((string : \"string\")))" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks nonetype function call" in
@@ -297,7 +297,7 @@ in
 let expected =
   [
     "def foo() -> None:";
-    "print((string : \"foo\"))";
+    "(int : print((string : \"foo\")))";
     "def main() -> int:";
     "(None : foo())";
     "";
@@ -309,115 +309,108 @@ let test_case = "Semantically checks assignment to nonetype" in
 let addition =
   "def foo() -> None:\r\n\n\tprint(\"foo\")\r\n\nx: int\r\n\nx = foo()\r\n"
 in
-let expected = [ "def foo() -> None:"; "print((string : \"foo\"))"; "" ] in
+let expected = [ "def foo() -> None:"; "(int : print((string : \"foo\")))"; "" ] in
 try run_test ~debug:false test_case (addition ^ "\n") expected
-with Failure e when e = "Cannot assign variable to nonetype" -> (
-  pass_test ();
+with Failure e when e = "Cannot assign variable to nonetype" -> pass_test ();
 
-  let test_case = "Semantically checks augmented assignment to nonetype" in
-  let addition =
-    "def foo() -> None:\r\n\n\
-     \tprint(\"foo\")\r\n\n\
-     x: int = 4\r\n\n\
-     x += foo()\r\n"
-  in
-  let expected = [ "def foo() -> None:"; "print((string : \"foo\"))"; "" ] in
-  try run_test ~debug:false test_case (addition ^ "\n") expected
-  with Failure e when e = "Cannot assign variable to nonetype" -> (
-    pass_test ();
+let test_case = "Semantically checks augmented assignment to nonetype" in
+let addition =
+  "def foo() -> None:\r\n\n\
+    \tprint(\"foo\")\r\n\n\
+    x: int = 4\r\n\n\
+    x += foo()\r\n"
+in
+let expected = [ "def foo() -> None:"; "(int : print((string : \"foo\")))"; "" ] in
+try run_test ~debug:false test_case (addition ^ "\n") expected
+with Failure e when e = "Cannot assign variable to nonetype" -> pass_test ();
 
-    let test_case = "Semantically checks declaration to nonetype" in
-    let addition =
-      "def foo() -> None:\r\n\
-       \tprint(\"foo\")\r\n\
-       def main() -> int:\r\n\
-       \tx: int = foo()\r\n"
-    in
-    try run_test ~debug:false test_case (addition ^ "\n") []
-    with
-    | Failure e
-    when e
-         = "Incompatible type. Expected Var type:int Received expression type: \
-            None"
-    -> (
-      pass_test ();
+let test_case = "Semantically checks declaration to nonetype" in
+let addition =
+  "def foo() -> None:\r\n\
+    \tprint(\"foo\")\r\n\
+    def main() -> int:\r\n\
+    \tx: int = foo()\r\n"
+in
+try run_test ~debug:false test_case (addition ^ "\n") []
+with
+| Failure e
+when e
+      = "Incompatible type. Expected Var type:int Received expression type: \
+        None"
+-> pass_test ();
 
-      let test_case = "Prevents nested function definitions" in
-      let actual =
-        "def main() -> int:\r\n\
-         \tdef foo() -> None:\r\n\
-         \t\tprint(\"yay\")\r\n\
-         \treturn 0\r\n"
-      in
-      try run_test ~debug:true test_case (actual ^ "\n") []
-      with
-      | Failure e
-      when e
-           = "Nested function definitions are not allowed. Received a \
-              definition for a function named: foo"
-      -> (
-        pass_test ();
+let test_case = "Prevents nested function definitions" in
+let actual =
+  "def main() -> int:\r\n\
+    \tdef foo() -> None:\r\n\
+    \t\tprint(\"yay\")\r\n\
+    \treturn 0\r\n"
+in
+try run_test ~debug:true test_case (actual ^ "\n") []
+with
+| Failure e
+when e
+      = "Nested function definitions are not allowed. Received a \
+        definition for a function named: foo"
+-> pass_test ();
 
-        let test_case = "Enforces that main should have zero parameters" in
-        let actual = "def main(x: int) -> int:\r\n\treturn 0\r\n" in
-        try run_test ~debug:false test_case (actual ^ "\n") []
-        with
-        | Failure e
-        when e
-             = "The main function should take zero arguments and return an int"
-        -> (
-          pass_test ();
+let test_case = "Enforces that main should have zero parameters" in
+let actual = "def main(x: int) -> int:\r\n\treturn 0\r\n" in
+try run_test ~debug:false test_case (actual ^ "\n") []
+with
+| Failure e
+when e
+      = "The main function should take zero arguments and return an int"
+-> pass_test ();
 
-          let test_case = "Enforces that main should return an int" in
-          let actual = "def main() -> bool:\r\n\treturn True\r\n" in
-          try run_test ~debug:false test_case (actual ^ "\n") []
-          with
-          | Failure e
-          when e
-               = "The main function should take zero arguments and return an \
-                  int"
-          -> (
-            pass_test ();
+let test_case = "Enforces that main should return an int" in
+let actual = "def main() -> bool:\r\n\treturn True\r\n" in
+try run_test ~debug:false test_case (actual ^ "\n") []
+with
+| Failure e
+when e
+      = "The main function should take zero arguments and return an \
+        int"
+-> pass_test ();
 
-            let test_case = "Parses negative ints and floats" in
-            let actual =
-              build_main
-                "a: int = -3\n\
-                 \tb: float = -3.0\n\
-                 \tc: int = 3 - -1\n\
-                 \td: float = -3.0 - -3.0"
-            in
-            let expected =
-              build_expected_main
-                [
-                  "a: int(int : -3)";
-                  "b: float(float : -3.)";
-                  "c: int(int : (int : 3) - (int : -1))";
-                  "d: float(float : (float : -3.) - (float : -3.))";
-                ]
-            in
-            run_test ~debug:false test_case (actual ^ "\n") expected;
+let test_case = "Parses negative ints and floats" in
+let actual =
+  build_main
+    "a: int = -3\n\
+      \tb: float = -3.0\n\
+      \tc: int = 3 - -1\n\
+      \td: float = -3.0 - -3.0"
+in
+let expected =
+  build_expected_main
+    [
+      "a: int(int : -3)";
+      "b: float(float : -3.)";
+      "c: int(int : (int : 3) - (int : -1))";
+      "d: float(float : (float : -3.) - (float : -3.))";
+    ]
+in
+run_test ~debug:false test_case (actual ^ "\n") expected;
 
-            let test_case = "Semantically checks return type of function" in
-            let actual = "def main() -> int:\r\n\treturn 1.0" in
-            try run_test ~debug:true test_case (actual ^ "\n") []
-            with
-            | Failure e
-            when e
-                 = "Function 'main' expects a return type of int, but \
-                    currently returns type float"
-            ->
-              pass_test ();
+let test_case = "Semantically checks return type of function" in
+let actual = "def main() -> int:\r\n\treturn 1.0" in
+try run_test ~debug:true test_case (actual ^ "\n") []
+with
+| Failure e
+when e
+      = "Function 'main' expects a return type of int, but \
+        currently returns type float"
+-> pass_test ();
 
-              (*
+(*
 Boiler plate set up for processing the results of the tests   
 *)
-              print_newline ();
-              print_int !passed_tests;
-              print_string "/";
-              print_int !count_tests;
-              print_endline " tests passed!";
-              let percentage_passed =
-                float_of_int !passed_tests /. float_of_int !count_tests *. 100.
-              in
-              print_endline (string_of_float percentage_passed ^ "%")))))))
+print_newline ();
+print_int !passed_tests;
+print_string "/";
+print_int !count_tests;
+print_endline " tests passed!";
+let percentage_passed =
+  float_of_int !passed_tests /. float_of_int !count_tests *. 100.
+in
+print_endline (string_of_float percentage_passed ^ "%")

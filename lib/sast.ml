@@ -28,7 +28,6 @@ type sstmt =
   | SIf of sexpr * sstmt list * sstmt list
   | SWhile of sexpr * sstmt list
   | SFor of string * sexpr * sstmt list
-  | SPrint of sexpr
   | SDecl of string * typ * sexpr option
 
 type sstmt_list = 
@@ -84,7 +83,6 @@ let rec string_of_sstmt = function
       "while " ^ string_of_sexpr e ^ ":" ^ string_of_sblock block
   | SFor (v, e, b) ->
       "for " ^ v ^ " in " ^ string_of_sexpr e ^ ":" ^ string_of_sblock b
-  | SPrint e -> "print(" ^ string_of_sexpr e ^ ")\n"
   | SDecl (id, typ, sexpr_opt) -> string_of_decl (id, typ) ^ string_of_sexpr_opt sexpr_opt ^ "\n"
 
 and string_of_selif_blocks elif_blocks =

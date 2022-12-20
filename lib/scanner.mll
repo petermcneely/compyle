@@ -120,7 +120,6 @@ and code manager = parse
 | "def"                                                     { DEF }
 | "->"                                                      { ARROW }
 | "return"                                                  { RETURN }
-| "print"                                                   { PRINT }
 | "True"                                                    { BOOL_LITERAL(true) }
 | "False"                                                   { BOOL_LITERAL(false) }
 | "tuple"                                                   { TUPLE }
