@@ -1,21 +1,49 @@
 ; ModuleID = 'compyle'
 source_filename = "compyle"
 
+@intgsp = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+
 declare i32 @printf(i8*, ...)
 
 define i32 @main() {
 entry:
-  br label %loop
+  %x = alloca i32, align 4
+  store i32 0, i32* %x, align 4
+  br label %while
 
-loop:                                             ; preds = %entry
-  %i = phi i32 [ 1, %entry ], [ 2, %loop ], [ 3, %loop ], [ 4, %loop ]
-  %z = alloca i32, align 4
-  store i32 3, i32* %z, align 4
-  %z1 = alloca i32, align 4
-  store i32 3, i32* %z1, align 4
-  %z2 = alloca i32, align 4
-  store i32 3, i32* %z2, align 4
+while:                                            ; preds = %next, %entry
+  br i1 true, label %while_body, label %while_end
 
-after:                                            ; No predecessors!
+while_body:                                       ; preds = %while
+  %0 = load i32, i32* %x, align 4
+  %tmp = add i32 %0, 1
+  store i32 %tmp, i32* %x, align 4
+  %x1 = load i32, i32* %x, align 4
+  %tmp2 = icmp eq i32 %x1, 10
+  br i1 %tmp2, label %then, label %else
+
+while_end:                                        ; preds = %while, %then5
+  %x8 = load i32, i32* %x, align 4
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @intgsp, i32 0, i32 0), i32 %x8)
   ret i32 0
+
+then:                                             ; preds = %while_body
+  %x3 = load i32, i32* %x, align 4
+  %tmp4 = icmp eq i32 %x3, 10
+  br i1 %tmp4, label %then5, label %else6
+
+else:                                             ; preds = %while_body
+  br label %next
+
+next:                                             ; preds = %else, %next7
+  br label %while
+
+then5:                                            ; preds = %then
+  br label %while_end
+
+else6:                                            ; preds = %then
+  br label %next7
+
+next7:                                            ; preds = %else6
+  br label %next
 }

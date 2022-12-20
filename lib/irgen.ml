@@ -109,6 +109,7 @@ let translate (sprogram : sprogram) =
           | Int -> L.const_array i32_t sarr
           | Float -> L.const_array f32_t sarr
           | Bool -> L.const_array i1_t sarr
+          | String -> L.const_array pointer_i8_t sarr
           | _ -> raise (Failure "Multi-Dim Array")))
     | STupleLit t -> (let arr = Array.of_list t in
     let e =  Array.map (fun i -> build_IR_on_expr builder i local_variables global_variables) arr in
@@ -223,9 +224,13 @@ let translate (sprogram : sprogram) =
       let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) (List.rev args)) in 
       L.build_call f_addr (Array.of_list llargs) "" builder
   in
-  let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) = function
+  let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) (break_block: L.llbasicblock option) = function
     (* match sstmt*)
-    | SBreak -> ignore(L.build_ret_void builder); builder
+    | SBreak -> (
+      let _ = match break_block with
+        | None -> ()
+        | Some b -> ignore(L.build_br b builder) in
+      builder)
     | SExpr e -> 
       ignore(build_IR_on_expr builder e local_variables global_variables); builder
     | SFunction _ -> builder
@@ -262,21 +267,31 @@ let translate (sprogram : sprogram) =
 
       let then_bb = L.append_block context "then" the_function in 
       let else_bb = L.append_block context "else" the_function in 
-      let end_bb = L.append_block context "end_if" the_function in
+      let next_bb = L.append_block context "next" the_function in
 
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
       let then_builder = L.builder_at_end context then_bb in 
-      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables);
+      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables break_block);
 
       let else_builder = L.builder_at_end context else_bb in 
-      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables);
+      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables break_block);
 
-      let build_br_end = L.build_br end_bb in (* partial function *)
-      add_terminal (L.builder_at_end context then_bb) build_br_end;
-      add_terminal (L.builder_at_end context else_bb) build_br_end;
+      let build_br_next = L.build_br next_bb in (* partial function *)
+      add_terminal (L.builder_at_end context then_bb) build_br_next;
+      add_terminal (L.builder_at_end context else_bb) build_br_next;
 
-      L.builder_at_end context end_bb
+      (* need to have nested if elses jump back to the previous next block *)
+      let pred_block = match (L.block_pred then_bb) with
+          | L.At_start a -> L.block_of_value a
+          | L.After a -> a in
+      let pred_block_name = L.value_name (L.value_of_block pred_block) in
+          
+      let instr_count = L.fold_left_instrs (fun agg _ -> agg + 1) 0 next_bb in
+      if instr_count = 0 && ((String.sub pred_block_name 0 4) = "next") then
+        ignore(L.build_br pred_block (L.builder_at_end context next_bb));
+      
+      L.builder_at_end context next_bb
     | SWhile (e, sl) -> 
       (*
       FNAME:
@@ -300,9 +315,9 @@ let translate (sprogram : sprogram) =
       let bool_val = build_IR_on_expr while_builder e local_variables global_variables in
 
       let body_bb = L.append_block context "while_body" the_function in
-      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables) build_br_while;
-
       let end_bb = L.append_block context "while_end" the_function in 
+      let opt = Some end_bb in
+      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables opt) build_br_while;
 
       ignore(L.build_cond_br bool_val body_bb end_bb while_builder);
       L.builder_at_end context end_bb
@@ -338,7 +353,7 @@ let translate (sprogram : sprogram) =
                   x = 2 
                   print(x) 
             *)
-            ignore(build_IR_on_stmt_list builder body local_variables global_variables);
+            ignore(build_IR_on_stmt_list builder body local_variables global_variables break_block);
             (* Hashtbl.remove local_variables var_name; *)
             let loop_end_bb = L.insertion_block builder in 
             
@@ -398,7 +413,7 @@ let translate (sprogram : sprogram) =
       Hashtbl.add hash_table name (t, local) in 
     List.iter2 (fun decl -> add_formal scoped_local_variables (snd decl) (fst decl) ) formals (Array.to_list (L.params the_function));
     
-    let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables in
+    let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables None in
     if rtyp = A.NoneType then
       ignore(L.build_ret_void func_builder)
     else
@@ -421,8 +436,8 @@ let translate (sprogram : sprogram) =
       | Some sexpr -> initialized_const (snd sexpr) in
     Hashtbl.add global_variables name (typ, (L.define_global name initial_value the_module));
   | _ -> ()
-  and build_IR_on_stmt_list builder sl local_variables global_variables = 
-      List.fold_left (fun b s -> build_IR_on_stmt b local_variables global_variables s) builder sl 
+  and build_IR_on_stmt_list builder sl local_variables global_variables (break_block: L.llbasicblock option) = 
+      List.fold_left (fun b s -> build_IR_on_stmt b local_variables global_variables break_block s) builder sl 
   in
   (* Unsure the usage of L.builder here but it helps compile for now*)
   (*List.map (build_IR_on_stmt L.builder) sprogram;*)
