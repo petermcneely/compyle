@@ -203,22 +203,6 @@ let actual = build_main "not True" in
 let expected = build_expected_main [ "(bool : not (bool : True))" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
-let test_case = "Semantically checks NotIn operator" in
-let actual = build_main "5 not in [5, 2]" in
-let expected =
-  build_expected_main
-    [ "(bool : (int : 5) not in (int[] of length 2 : [(int : 5), (int : 2)]))" ]
-in
-run_test ~debug:false test_case (actual ^ "\n") expected;
-
-let test_case = "Semantically checks In operator" in
-let actual = build_main "5 in [5, 2]" in
-let expected =
-  build_expected_main
-    [ "(bool : (int : 5) in (int[] of length 2 : [(int : 5), (int : 2)]))"]
-in
-run_test ~debug:false test_case (actual ^ "\n") expected;
-
 let test_case = "Semantically checks If Statement" in
 let comparing =
   "def main() -> int:\r\n\
