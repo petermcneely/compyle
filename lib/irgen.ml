@@ -32,6 +32,7 @@ let translate (sprogram : sprogram) =
     | A.Bool  -> i1_t
     | A.Float -> f32_t
     | A.String -> pointer_i8_t
+    | A.NoneType -> L.void_type context
     | _ -> raise (Failure "Unimplemented")
   in
 
