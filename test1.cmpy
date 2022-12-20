@@ -1,25 +1,17 @@
-
-# A test to showcase different features of ComPyle
-
-
-x :int = 4
-y :float = 6.0
-
-# Prints global variable values
-def print_vals() -> None:
-    print(x)
-    print(y)
-
-# Sums values in an array
-def array_sum(arr: float[]) -> float:
-    z: float
-    for i in arr:
-        z += i
-    return z
+def fib(n: int) -> int:
+	if n == 0:
+		return 1
+	elif n == 1:
+		return 1
+	else:
+		return fib(n - 1) + fib(n - 2)
 
 def main() -> int:
-    print_vals()
-    r: float[] = [1., 2., 3.]
-    s: float = array_sum(r)
-    print(s)
-    return 0
+	y: int = 0
+	# calculate the first 10 fibonnaci numbers
+	while y < 10:
+		print(fib(y))
+		print("|")
+		y += 1
+	
+	return 0
