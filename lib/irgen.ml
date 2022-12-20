@@ -94,7 +94,6 @@ let translate (sprogram : sprogram) =
     | SFloatLit i -> L.const_float f32_t i
     | SStringLit s -> L.build_global_stringptr (String.sub s 1 ((String.length s) - 2)) "" builder
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
-    | SArrayLit l -> raise (Failure "Unimplemented")
     | SArrayLit l -> ( 
       if List.length l = 0
         then L.const_array i32_t [||]
@@ -103,7 +102,7 @@ let translate (sprogram : sprogram) =
           let head_type, _ = head in
           let size = List.length l in
           let arr = Array.of_list l in
-          let sarr = Array.map (build_IR_on_expr builder) arr in
+          let sarr = Array.map (fun i -> build_IR_on_expr builder i local_variables global_variables) arr in
           match head_type with
           | Int -> L.const_array i32_t sarr
           | Float -> L.const_array f32_t sarr

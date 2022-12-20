@@ -268,6 +268,12 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
           | None -> None
           | Some e ->
               let sexpr = check_expr (decl_vars, decl_funcs, e) in
+              match (t, fst sexpr) with
+              | Array (t1, len1), Array (t2, len2) when t1 = t2 ->
+                  Some sexpr
+              | Array(t1, len1), EmptyArray when len1 = 0 -> Some sexpr
+              | EmptyArray, Array(t2, len2) when len2 = 0 -> Some sexpr
+              | _ ->              
               if t = fst sexpr then Some sexpr
               else
                 raise
