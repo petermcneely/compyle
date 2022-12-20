@@ -38,8 +38,6 @@ type expr =
   | Asn of string * expr
   | AugAsn of string * aug_op * expr
   | Not of expr
-  | In of expr * expr
-  | NotIn of expr * expr
   | Call of string * expr list
 
 type decl = string * typ
@@ -113,8 +111,6 @@ let rec string_of_expr = function
   | Asn (v, e) -> v ^ " = " ^ string_of_expr e
   | AugAsn (v, op, e) -> v ^ " " ^ string_of_aug_op op ^ " " ^ string_of_expr e
   | Not e -> "not " ^ string_of_expr e
-  | In (e1, e2) -> string_of_expr e1 ^ " in " ^ string_of_expr e2
-  | NotIn (e1, e2) -> string_of_expr e1 ^ " not in " ^ string_of_expr e2
   | Call (fn, args) -> fn ^ "(" ^ string_of_exprs args ^ ")"
 
 and string_of_exprs l =
