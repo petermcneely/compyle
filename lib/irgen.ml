@@ -102,9 +102,9 @@ let translate (sprogram : sprogram) =
     let arr = Array.of_list l in
     let sarr = Array.map (build_IR_on_expr builder) arr in
     match head_type with
-    | Int -> L.const_array (L.array_type i32_t size) sarr
-    | Float -> L.const_array (L.array_type f32_t size) sarr
-    | Bool -> L.const_array (L.array_type i1_t size) sarr
+    | Int -> L.const_array i32_t sarr
+    | Float -> L.const_array f32_t sarr
+    | Bool -> L.const_array i1_t sarr
     (*| String -> L.const_array (L.array_type (s32_t size)*)
     (*| Tuple*)
     | _ -> raise (Failure "Multi-Dim Array"))
