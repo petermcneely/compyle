@@ -313,7 +313,7 @@ let translate (sprogram : sprogram) =
         let itr_length = List.length i in 
         let llvals = List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) i in 
         let llarr = Array.of_list llvals in 
-        let start_val = llarr.(0) in 
+        let start_val = llarr.(0) in (* for i in [1, 2, 3]*)
         (* Make the new basic block for the loop header, inserting after current
         * block. *)
         let preheader_bb = L.insertion_block builder in
@@ -328,22 +328,30 @@ let translate (sprogram : sprogram) =
         (* Start insertion in loop_bb. *)
         L.position_at_end loop_bb builder;
         let variable = L.build_phi [(start_val, preheader_bb)] var_name builder in
+        (* i = 1 *)
 
         let rec build_loop_helper (index: int) : L.llbuilder = 
           if (index < itr_length) then (
             (* Start the PHI node with an entry for start. *)
             Hashtbl.add local_variables var_name (t, variable); (* TODO: Get the type of variable *)
+            (* for i in [1, 2, 3]:
+                  x = 2 
+                  print(x) 
+            *)
             ignore(build_IR_on_stmt_list builder body local_variables global_variables);
             Hashtbl.remove local_variables var_name;
             let loop_end_bb = L.insertion_block builder in 
             let next_var = llarr.(index+1) in 
             L.add_incoming (next_var, loop_end_bb) variable;
-            build_loop_helper (index+1)) 
-          ) else 
+            build_loop_helper (index+1)
+          ) else (
             L.position_at_end after_bb builder;
             builder 
-      | (_, _) -> raise (Failure "Developer Error")
-      | _
+          )
+          in 
+          build_loop_helper 0
+      | _ -> raise (Failure "Developer Error")
+      )
       
       (* 
         SFor(var_name, itr, stmts) -> 
