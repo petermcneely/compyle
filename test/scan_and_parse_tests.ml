@@ -129,7 +129,7 @@ let expected = [ "x: bool"; "x = True"; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses Certain Math Operations" in
-let comparing = "4 + 0 - 9 * 4 / 10 % 6 ** 9" in
+let comparing = "4 + 0 - 9 * 4 / 10 % 6" in
 let expected = [ comparing; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 

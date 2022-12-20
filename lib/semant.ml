@@ -106,7 +106,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         if t1 = t2 then
           let t =
             match bin_op with
-            | (Add | Sub | Mult | Div | Mod | Exp) when t1 = Int || t1 = Float
+            | (Add | Sub | Mult | Div | Mod ) when t1 = Int || t1 = Float
               ->
                 t1
             | (And | Or) when t1 = Bool -> t1

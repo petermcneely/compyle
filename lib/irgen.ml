@@ -181,9 +181,25 @@ let translate (sprogram : sprogram) =
       *)
       let e_addr = build_IR_on_expr builder e local_variables global_variables in 
       let lv = Hashtbl.find local_variables s in
-      let sum_addr = L.build_add e_addr (snd lv) "tmp" builder in 
-      ignore(L.build_store sum_addr (snd lv) builder);
-      sum_addr
+      let loaded = L.build_load (snd lv) "" builder in
+      let ty = fst e in
+      let op = match ty with 
+      | Int -> (match ag_op with 
+                A.AAAdd     -> L.build_add 
+              | A.AASub     -> L.build_sub 
+              | A.AAMult    -> L.build_mul
+              | A.AADiv     -> L.build_sdiv
+              | A.AAMod     -> L.build_srem)
+      | Float -> (match ag_op with
+              A.AAAdd      -> L.build_fadd
+              | A.AASub     -> L.build_fsub
+              | A.AAMult    -> L.build_fmul
+              | A.AADiv     -> L.build_fdiv
+              | A.AAMod     -> L.build_frem)
+      | _ -> raise (Failure "Developer Error") in
+      let aug_op_addr =  op loaded e_addr "tmp" builder in 
+      ignore(L.build_store aug_op_addr (snd lv) builder);
+      aug_op_addr
     | SNot e -> 
       let e_addr = build_IR_on_expr builder e local_variables global_variables in  
       L.build_not e_addr "tmp" builder
