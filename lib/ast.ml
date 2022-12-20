@@ -4,7 +4,7 @@ type typ =
   | Float
   | String
   | Tuple
-  | Array of typ * int * int
+  | Array of typ * int
   | EmptyArray
   | NoneType
 
@@ -89,10 +89,9 @@ let rec string_of_typ = function
   | NoneType -> "None"
   | Tuple -> "tuple"
   | EmptyArray -> "[]"
-  | Array (t, dimensions, length) ->
+  | Array (t, length) ->
       string_of_typ t
-      ^ string_of_dimensions dimensions
-      ^ " of length " ^ string_of_int length
+      ^ "[] of length " ^ string_of_int length
 
 and string_of_dimensions (dimensions : int) : string =
   if dimensions = 0 then "" else "[]" ^ string_of_dimensions (dimensions - 1)

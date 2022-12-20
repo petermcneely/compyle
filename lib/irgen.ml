@@ -35,7 +35,7 @@ let translate (sprogram : sprogram) =
     | A.Bool -> i1_t
     | A.Float -> f32_t
     | A.String -> pointer_i8_t
-    | A.Array (t, dim, length) -> L.array_type (ltype_of_typ t) length
+    | A.Array (t, length) -> L.array_type (ltype_of_typ t) length
     | _ -> raise (Failure "Unimplemented")
   in
 
@@ -96,15 +96,17 @@ let translate (sprogram : sprogram) =
           (String.sub s 1 (String.length s - 2))
           "" builder
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
-    | SArrayLit l -> (let head = List.hd l in
+    | SArrayLit l -> if List.length l = 0 then L.const_array i32_t [||]
+    else
+      (let head = List.hd l in
     let head_type, _ = head in
     let size = List.length l in
     let arr = Array.of_list l in
     let sarr = Array.map (build_IR_on_expr builder) arr in
     match head_type with
-    | Int -> L.const_array (L.array_type i32_t size) sarr
-    | Float -> L.const_array (L.array_type f32_t size) sarr
-    | Bool -> L.const_array (L.array_type i1_t size) sarr
+    | Int -> L.const_array i32_t sarr
+    | Float -> L.const_array f32_t sarr
+    | Bool -> L.const_array i1_t sarr
     (*| String -> L.const_array (L.array_type (s32_t size)*)
     (*| Tuple*)
     | _ -> raise (Failure "Multi-Dim Array"))

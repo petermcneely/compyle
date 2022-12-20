@@ -89,9 +89,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               let head = List.hd s_el in
               let head_type, _ = head in
               let resolve_array_type = function
-                | Array (array_typ, dimension, _) ->
-                    Array (array_typ, dimension + 1, List.length s_el)
-                | _ as s -> Array (s, 1, List.length s_el)
+                | Array (array_typ, i) ->
+                    Array (array_typ, List.length s_el)
+                | _ as s -> Array (s, List.length s_el)
               in
               (resolve_array_type head_type, SArrayLit s_el)
         in
@@ -149,9 +149,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let sexpr =
           match t2 with
           | Tuple | EmptyArray -> (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _, _) when elem_typ = t1 ->
+          | Array (elem_typ, _) when elem_typ = t1 ->
               (Bool, SNotIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _, _) when elem_typ != t1 ->
+          | Array (elem_typ, _) when elem_typ != t1 ->
               raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
@@ -162,9 +162,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let sexpr =
           match t2 with
           | Tuple | EmptyArray -> (Bool, SIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _, _) when elem_typ = t1 ->
+          | Array (elem_typ, _) when elem_typ = t1 ->
               (Bool, SIn ((t1, e1'), (t2, e2')))
-          | Array (elem_typ, _, _) when elem_typ != t1 ->
+          | Array (elem_typ, _) when elem_typ != t1 ->
               raise (Failure "Expect array's element type matches")
           | _ -> raise (Failure "Expect iterables")
         in
@@ -252,7 +252,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let t, e' = check_expr (decl_vars, decl_funcs, e) in
         let s_stmt =
           match t with
-          | Array (array_elem_typ, _, _) ->
+          | Array (array_elem_typ, _) ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
               SFor (id, (t, e'), check ~top_level:false for_block)
           | _ -> raise (Failure "Expect Array")
@@ -266,8 +266,10 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
           | Some e -> (
               let sexpr = check_expr (decl_vars, decl_funcs, e) in
               match (t, fst sexpr) with
-              | Array (t1, dim1, len1), Array (t2, dim2, len2) when t1 = t2 ->
+              | Array (t1, len1), Array (t2, len2) when t1 = t2 ->
                   Some sexpr
+              | Array(t1, len1), EmptyArray when len1 = 0 -> Some sexpr
+              | EmptyArray, Array(t2, len2) when len2 = 0 -> Some sexpr
               | _ ->
                   if t = fst sexpr then Some sexpr
                   else
