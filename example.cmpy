@@ -10,6 +10,9 @@ def main() -> int:
 	d: bool = False
 	e: bool = False
 
+	x: tuple<int, float>
+	x = (4, 4.0)
+
 	if True:
 		a: int = 2
 		if d:

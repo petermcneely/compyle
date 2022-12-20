@@ -12,6 +12,8 @@ c: tuple<bool, int, float, string>(tuple<bool, int, float, string> : ((bool : Tr
 b: int(int : 0)
 d: bool(bool : False)
 e: bool(bool : False)
+x: tuple<int, float>
+(tuple<int, float> : x = (tuple<int, float> : ((int : 4), (float : 4.))))
 if (bool : True):
 a: int(int : 2)
 if (bool : d):

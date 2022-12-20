@@ -260,7 +260,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               else
                 raise
                   (Failure
-                     ("Incompatible type. Expected Var type:" ^ string_of_typ t
+                     ("Incompatible type. Expected Var type: " ^ string_of_typ t
                     ^ " Received expression type: "
                      ^ string_of_typ (fst sexpr)))
         in
