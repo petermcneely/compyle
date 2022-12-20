@@ -34,6 +34,8 @@ let translate (sprogram : sprogram) =
     | A.String -> pointer_i8_t
     | A.NoneType -> L.void_type context
     | A.Array (t, length) -> L.array_type (ltype_of_typ t) length
+    | A.Tuple (l) -> let arr = Array.of_list (List.map ltype_of_typ l) in
+                     L.struct_type context arr
     | _ -> raise (Failure "Unimplemented")
   in
 
@@ -108,7 +110,11 @@ let translate (sprogram : sprogram) =
           | Float -> L.const_array f32_t sarr
           | Bool -> L.const_array i1_t sarr
           | _ -> raise (Failure "Multi-Dim Array")))
-    | STupleLit _ -> raise (Failure " Unimplemented")
+    | STupleLit t -> (let arr = Array.of_list t in
+    let e =  Array.map (fun i -> build_IR_on_expr builder i local_variables global_variables) arr in
+    let ty = Array.map L.type_of e in
+    let s_t = L.struct_type context ty in
+              L.const_struct context e)
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
       let e1' = build_IR_on_expr builder e1 local_variables global_variables
@@ -215,7 +221,7 @@ let translate (sprogram : sprogram) =
     | SCall (fname, args) -> 
       let (f_addr, sstmt) = StringMap.find fname func_declarations in 
       let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) (List.rev args)) in 
-      L.build_call f_addr (Array.of_list llargs) "" builder 
+      L.build_call f_addr (Array.of_list llargs) "" builder
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) = function
     (* match sstmt*)
