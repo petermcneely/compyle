@@ -262,7 +262,7 @@ let translate (sprogram : sprogram) =
 
       let then_bb = L.append_block context "then" the_function in 
       let else_bb = L.append_block context "else" the_function in 
-      let end_bb = L.append_block context "end_if" the_function in
+      let next_bb = L.append_block context "next" the_function in
 
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
@@ -272,11 +272,21 @@ let translate (sprogram : sprogram) =
       let else_builder = L.builder_at_end context else_bb in 
       ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables);
 
-      let build_br_end = L.build_br end_bb in (* partial function *)
-      add_terminal (L.builder_at_end context then_bb) build_br_end;
-      add_terminal (L.builder_at_end context else_bb) build_br_end;
+      let build_br_next = L.build_br next_bb in (* partial function *)
+      add_terminal (L.builder_at_end context then_bb) build_br_next;
+      add_terminal (L.builder_at_end context else_bb) build_br_next;
 
-      L.builder_at_end context end_bb
+      (* need to have nested if elses jump back to the previous next block *)
+      let pred_block = match (L.block_pred then_bb) with
+          | L.At_start a -> L.block_of_value a
+          | L.After a -> a in
+      let pred_block_name = L.value_name (L.value_of_block pred_block) in
+          
+      let instr_count = L.fold_left_instrs (fun agg _ -> agg + 1) 0 next_bb in
+      if instr_count = 0 && ((String.sub pred_block_name 0 4)= "next") then
+        ignore(L.build_br pred_block (L.builder_at_end context next_bb));
+      
+      L.builder_at_end context next_bb
     | SWhile (e, sl) -> 
       (*
       FNAME:
