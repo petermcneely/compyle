@@ -269,11 +269,13 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               | Array (t1, dim1, len1), Array (t2, dim2, len2) when t1 = t2 ->
                   Some sexpr
               | _ ->
-                  raise
-                    (Failure
-                       ("Incompatible type. Expected Var type:"
-                      ^ string_of_typ t ^ " Received expression type: "
-                       ^ string_of_typ (fst sexpr))))
+                  if t = fst sexpr then Some sexpr
+                  else
+                    raise
+                      (Failure
+                         ("Incompatible type. Expected Var type:"
+                        ^ string_of_typ t ^ " Received expression type: "
+                         ^ string_of_typ (fst sexpr))))
         in
         SDecl (id, t, some_sexpr)
   in
