@@ -99,7 +99,9 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         s_stmt
     | TupleLit t ->
         let check_expr_with_decls ex = check_expr (decl_vars, decl_funcs, ex) in
-        (Tuple, STupleLit (List.map check_expr_with_decls t))
+        let sexprs = List.map check_expr_with_decls t in
+        let typs = List.map (fun (t, se) -> t) sexprs in
+        (Tuple(typs), STupleLit (List.map check_expr_with_decls t))
     | Binop (e1, bin_op, e2) ->
         let t1, e1' = check_expr (decl_vars, decl_funcs, e1)
         and t2, e2' = check_expr (decl_vars, decl_funcs, e2) in
@@ -127,12 +129,17 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               ^ "' and '" ^ string_of_typ t2 ^ "'"))
     | Id var -> (find_var_type (decl_vars, var), SId var)
     | Asn (var, e) ->
-        let t = find_var_type (decl_vars, var)
-        and t', e' = check_expr (decl_vars, decl_funcs, e) in
-        if t' = NoneType then
-          raise (Failure "Cannot assign variable to nonetype")
-        else if t = t' then (t, SAsn (var, (t', e')))
-        else raise (Failure "Incompatible type")
+        let t1 = find_var_type (decl_vars, var)
+        and t2, e' = check_expr (decl_vars, decl_funcs, e) in(
+        match (t1, t2) with
+        | _, NoneType -> raise (Failure "Cannot assign variable to nonetype")
+        | Array (t1, len1), Array (t2, len2) when t1 = t2 -> (t1, SAsn (var, (t2, e')))
+        | Array(t1, len1), EmptyArray when len1 = 0 -> (t1, SAsn (var, (t2, e')))
+        | EmptyArray, Array(t2, len2) when len2 = 0 -> (t1, SAsn (var, (t2, e')))
+        | Tuple(typs1), Tuple(typs2) when typs1 = typs2 -> (t1, SAsn (var, (t2, e')))
+        | t1, t2 when t1 = t2 -> (t1, SAsn (var, (t2, e')))        
+        | _ -> raise (Failure ("Incompatible type. Expected Var type: " ^ string_of_typ t1
+          ^ " Received expression type: " ^ string_of_typ (t2))))
     | AugAsn (var, aug_op, e) ->
         let t1 = find_var_type (decl_vars, var)
         and t2, e' = check_expr (decl_vars, decl_funcs, e) in
@@ -247,6 +254,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
                   Some sexpr
               | Array(t1, len1), EmptyArray when len1 = 0 -> Some sexpr
               | EmptyArray, Array(t2, len2) when len2 = 0 -> Some sexpr
+              | Tuple(typs1), Tuple(typs2) when typs1 = typs2 -> Some sexpr
               | _ ->              
               if t = fst sexpr then Some sexpr
               else

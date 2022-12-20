@@ -146,7 +146,7 @@ run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks tuple literal" in
 let actual = build_main "(4, 4.)" in
-let expected = build_expected_main [ "(tuple : ((int : 4), (float : 4.)))" ] in
+let expected = build_expected_main [ "(tuple<int, float> : ((int : 4), (float : 4.)))" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks math binary operation for int" in

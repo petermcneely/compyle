@@ -97,8 +97,8 @@ let expected = [ comparing; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses tuples" in
-let comparing = "x: tuple\nx = (1, \"hello world\", true)" in
-let expected = [ "x: tuple"; "x = (1, \"hello world\", true)"; "" ] in
+let comparing = "x: tuple<int, string, bool>\nx = (1, \"hello world\", true)" in
+let expected = [ "x: tuple<int, string, bool>"; "x = (1, \"hello world\", true)"; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses arrays" in

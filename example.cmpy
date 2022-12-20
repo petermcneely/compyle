@@ -1,5 +1,5 @@
 def main() -> int:
-	c: int[] = [1,2,3]
+	c: tuple<bool, int, float> = (True,2,3.0)
 	b: int = 0
 
 	if True:
