@@ -109,6 +109,7 @@ let translate (sprogram : sprogram) =
           | Int -> L.const_array i32_t sarr
           | Float -> L.const_array f32_t sarr
           | Bool -> L.const_array i1_t sarr
+          | String -> L.const_array pointer_i8_t sarr
           | _ -> raise (Failure "Multi-Dim Array")))
     | STupleLit t -> (let arr = Array.of_list t in
     let e =  Array.map (fun i -> build_IR_on_expr builder i local_variables global_variables) arr in
