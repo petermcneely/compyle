@@ -143,11 +143,6 @@ let comparing = "not x" in
 let expected = [ "not x"; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
-let test_case = "Parses In/Not IN Operations" in
-let comparing = "True not in x" in
-let expected = [ "True not in x"; "" ] in
-run_test ~debug:false test_case (comparing ^ "\n") expected;
-
 let test_case = "Parses If Statements" in
 let comparing =
   "if x = 4:\r\n\n\

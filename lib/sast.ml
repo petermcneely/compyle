@@ -16,8 +16,6 @@ and sx =
   | SAsn of string * sexpr
   | SAugAsn of string * aug_op * sexpr
   | SNot of sexpr
-  | SIn of sexpr * sexpr
-  | SNotIn of sexpr * sexpr
   | SCall of string * sexpr list
 
 type sstmt =
@@ -53,8 +51,6 @@ let rec string_of_sexpr (t, e) =
     | SAugAsn (v, op, e) ->
         v ^ " " ^ string_of_aug_op op ^ " " ^ string_of_sexpr e
     | SNot e -> "not " ^ string_of_sexpr e
-    | SIn (e1, e2) -> string_of_sexpr e1 ^ " in " ^ string_of_sexpr e2
-    | SNotIn (e1, e2) -> string_of_sexpr e1 ^ " not in " ^ string_of_sexpr e2
     | SCall (fn, args) -> fn ^ "(" ^ string_of_sexprs args ^ ")")
   ^ ")"
 
