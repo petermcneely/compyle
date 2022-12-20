@@ -5,11 +5,20 @@ def fib(n: int) -> int:
 		return fib(n - 1) + fib(n - 2)
 
 def main() -> int:
-	c: tuple<bool, int, float> = (True,2,3.0)
+	c: tuple<bool, int, float, string> = (True,2,3.0, "hello world")
 	b: int = 0
+	d: bool = False
+	e: bool = False
 
 	if True:
 		a: int = 2
-		return a
+		if d:
+			z: int = 4
+			return a + z
+		elif e:
+			return b
+		else:
+			return b
+
 	else:
 		return b

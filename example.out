@@ -8,11 +8,20 @@ return (int : 1)
 else:
 return (int : (int : fib((int : (int : n) - (int : 1)))) + (int : fib((int : (int : n) - (int : 2)))))
 def main() -> int:
-c: tuple<bool, int, float>(tuple<bool, int, float> : ((bool : True), (int : 2), (float : 3.)))
+c: tuple<bool, int, float, string>(tuple<bool, int, float, string> : ((bool : True), (int : 2), (float : 3.), (string : "hello world")))
 b: int(int : 0)
+d: bool(bool : False)
+e: bool(bool : False)
 if (bool : True):
 a: int(int : 2)
-return (int : a)
+if (bool : d):
+z: int(int : 4)
+return (int : (int : a) + (int : z))
+else:
+if (bool : e):
+return (int : b)
+else:
+return (int : b)
 else:
 return (int : b)
 <EOF>

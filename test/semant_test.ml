@@ -144,10 +144,27 @@ let actual = build_main "[2, 3]" in
 let expected = build_expected_main [ "(int[] of length 2 : [(int : 2), (int : 3)])" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
-let test_case = "Semantically checks tuple literal" in
-let actual = build_main "(4, 4.)" in
-let expected = build_expected_main [ "(tuple<int, float> : ((int : 4), (float : 4.)))" ] in
-run_test ~debug:false test_case (actual ^ "\n") expected;
+let test_case = "Semantically checks tuple literal with assignment of correct types" in
+let actual = build_main "x: tuple<int, float> = (4, 4.)" in
+let expected = build_expected_main [ "x: tuple<int, float>(tuple<int, float> : ((int : 4), (float : 4.)))" ] in
+run_test ~debug:true test_case (actual ^ "\n") expected;
+
+let test_case = "Semantically checks reject tuple literal with assignment of incorrect types" in
+let actual = build_main "x: tuple<int, float> = (True, 4.)" in
+try run_test ~debug:false test_case (actual ^ "\n") []
+with
+| Failure e when e = "Incompatible type. Expected Var type:tuple<int, float> Received expression type: tuple<bool, float>"
+-> pass_test ();
+
+(* let test_case = "Semantically checks tuple literal of incorrect types" in
+let actual = "(tuple<int, float> : ((bool : True), (float : 4.)))" in
+try run_test ~debug:true test_case (actual ^ "\n") []
+with
+| Failure e
+when e
+      = "Function 'main' expects a return type of int, but \
+        currently returns type float"
+-> pass_test (); *)
 
 let test_case = "Semantically checks math binary operation for int" in
 let actual = build_main "4 + 4" in
