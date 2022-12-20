@@ -4,13 +4,10 @@ A test to showcase different features of ComPyle
 def tupes() -> int:
     x: tuple = (True, 5)
     y: bool = True
-    z = 5
-    if 6 not in x:
-        print("yay")
+    z = 7
     while y == True and z > 3:
-        if 5 in x:
+        if z < 5 :
             break
-        
         z -= 1
     return z
 
