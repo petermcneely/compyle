@@ -58,3 +58,40 @@ In short summary, this is how to contribute:
 4. From the GitHub UI, create a pull request (PR) of `my-feature-branch` into `main`.
 5. Wait for an approval
 6. On approval, merge your branch into `main`.
+
+## Performance
+A naive benchmark test illustrates how much faster ComPyle is when compared to Python.
+
+For the following Python script:
+```
+n: int = 0
+while n < 1000000000:
+    n += 1
+print(n)
+```
+
+And the following ComPyle script:
+```
+def main() -> int:
+	n: int = 0
+	while n < 1000000000:
+		n += 1
+	print(n)
+	return 0
+```
+
+We ran `time` on both executions.
+
+Running `time python example.py` resulted in
+|type|time|
+|---|---|
+|real|0m50.304s|
+|user|0m50.293s|
+|sys|0m0.012s|
+
+Running `dune exec compyle -- -l example.cmpy > example.out && time lli example.out` resulted in 
+|type|time|
+|---|---|
+|real|0m1.551s|
+|user|0m1.541s|
+|sys|0m0.011s|
