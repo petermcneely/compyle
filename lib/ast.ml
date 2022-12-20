@@ -8,7 +8,7 @@ type typ =
   | EmptyArray
   | NoneType
 
-type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod | AAExp
+type aug_op = AAAdd | AASub | AAMult | AADiv | AAMod
 
 type bin_op =
   | Add
@@ -16,7 +16,6 @@ type bin_op =
   | Mult
   | Div
   | Mod
-  | Exp
   | And
   | Or
   | Eq
@@ -63,7 +62,6 @@ let string_of_aug_op = function
   | AAMult -> "*="
   | AADiv -> "/="
   | AAMod -> "%="
-  | AAExp -> "**="
 
 let string_of_bin_op = function
   | Add -> "+"
@@ -71,7 +69,6 @@ let string_of_bin_op = function
   | Mult -> "*"
   | Div -> "/"
   | Mod -> "%"
-  | Exp -> "**"
   | And -> "and"
   | Or -> "or"
   | Eq -> "=="

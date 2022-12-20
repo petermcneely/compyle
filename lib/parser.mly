@@ -10,8 +10,8 @@ open Ast
 %token LPAREN RPAREN LBRACKET RBRACKET
 %token IF ELIF ELSE WHILE FOR IN
 %token BREAK
-%token PLUS MINUS TIMES DIVIDE MODULO EXP
-%token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN EXP_ASSIGN
+%token PLUS MINUS TIMES DIVIDE MODULO
+%token ASSIGN PLUS_ASSIGN MINUS_ASSIGN TIMES_ASSIGN DIV_ASSIGN MOD_ASSIGN
 %token EQ NEQ GT LT GEQ LEQ
 %token AND OR NOT
 %token INT BOOL FLOAT STRING NONETYPE
@@ -41,7 +41,6 @@ open Ast
 %left PLUS MINUS
 %left TIMES DIVIDE
 %left MODULO
-%left EXP
 
 %%
 program: stmt_list EOF { $1 }
@@ -120,7 +119,6 @@ expr:
 	| expr TIMES expr        { Binop($1, Mult, $3) }
 	| expr DIVIDE expr       { Binop($1, Div, $3)  }
 	| expr MODULO expr       { Binop($1, Mod, $3)  }
-	| expr EXP expr          { Binop($1, Exp, $3)  }
 	| ID { Id($1) }
 	| ID ASSIGN expr { Asn($1, $3) }
 	| ID PLUS_ASSIGN expr   { AugAsn($1, AAAdd, $3) }
@@ -128,7 +126,6 @@ expr:
 	| ID TIMES_ASSIGN expr  { AugAsn($1, AAMult, $3) }
 	| ID DIV_ASSIGN expr    { AugAsn($1, AADiv, $3)  }
 	| ID MOD_ASSIGN expr    { AugAsn($1, AAMod, $3)  }
-	| ID EXP_ASSIGN expr    { AugAsn($1, AAExp, $3)  }
 	| ID LPAREN args_opt RPAREN { Call($1, $3) }
 	| expr EQ expr     { Binop($1, Eq, $3)  }
 	| expr NEQ expr    { Binop($1, Neq, $3) }

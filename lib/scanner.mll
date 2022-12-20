@@ -92,14 +92,12 @@ and code manager = parse
 | '*'                                                       { TIMES }
 | '/'                                                       { DIVIDE }
 | '%'                                                       { MODULO }
-| "**"                                                      { EXP }
 | '='                                                       { ASSIGN }
 | "+="                                                      { PLUS_ASSIGN }
 | "-="                                                      { MINUS_ASSIGN }
 | "*="                                                      { TIMES_ASSIGN }
 | "/="                                                      { DIV_ASSIGN }
 | "%="                                                      { MOD_ASSIGN }
-| "**="                                                     { EXP_ASSIGN }
 | "=="                                                      { EQ }
 | "!="                                                      { NEQ }
 | '<'                                                       { LT }
