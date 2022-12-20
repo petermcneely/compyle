@@ -20,6 +20,7 @@ let newline = ('\n'|"\r\n")
 let whitespace = [' ' '\t']
 let single_line_comment = '#' [^ '\r' '\n']*
 let multi_line_comment = "\"\"\""
+let multi_line_comment_block = "\"\"\"" _* "\"\"\""
 let almost_ascii = [
   '!' '#' '$' '%' '&' '\'' '(' ')' '*' '+' ',' '-' '.'
   '/' '0'-'9' ':' ';' '<' '=' '>' '?' '@' 'A'-'Z' '['
@@ -65,8 +66,7 @@ rule token manager = parse
 
 and code manager = parse
 | [' ']     { token manager lexbuf }
-| newline? multi_line_comment  { multi_comment manager lexbuf }
-| (((whitespace* single_line_comment? newline)* whitespace* single_line_comment?) newline){
+| (((whitespace* single_line_comment? multi_line_comment_block? newline)* whitespace* single_line_comment? multi_line_comment_block?) newline) {
   (*
     From the LRM: A logical line that contains only spaces, tabs, formfeeds and possibly a comment,
     is ignored (i.e., no NEWLINE token is generated).
@@ -153,7 +153,3 @@ and tab manager = parse
     manager.curr_indentation <- manager.curr_indentation + 1;
     tab manager lexbuf
   }
-
-and multi_comment manager = parse
-  | multi_line_comment { token manager lexbuf }
-  | _                  { multi_comment manager lexbuf }

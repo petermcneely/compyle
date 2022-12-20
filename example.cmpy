@@ -1,9 +1,27 @@
-def main() -> int:
-	c: int[] = [1,2,3]
-	b: int = 0
-
-	if True:
-		a: int = 2
-		return a
+def fib(n: int) -> int:
+	if n == 1 or n == 0:
+		return 1
 	else:
-		return b
+		return fib(n - 1) + fib(n - 2)
+
+def foo() -> None:
+	print("returning none")
+
+def main() -> int:
+	n: int = 0
+	while n < 10:
+		print("|")
+		print(fib(n))
+		n += 1	
+	
+	"""
+	m: int = 0
+	while True:
+		if n < 6:
+			break
+		n += 1
+	"""
+
+	foo()
+
+	return 0

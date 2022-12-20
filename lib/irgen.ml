@@ -215,7 +215,7 @@ let translate (sprogram : sprogram) =
     | SCall (fname, args) -> 
       let (f_addr, sstmt) = StringMap.find fname func_declarations in 
       let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) (List.rev args)) in 
-      L.build_call f_addr (Array.of_list llargs) (fname^" result") builder 
+      L.build_call f_addr (Array.of_list llargs) "" builder 
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) = function
     (* match sstmt*)
@@ -270,7 +270,7 @@ let translate (sprogram : sprogram) =
       add_terminal (L.builder_at_end context then_bb) build_br_end;
       add_terminal (L.builder_at_end context else_bb) build_br_end;
 
-      L.builder_at_end context end_bb 
+      L.builder_at_end context end_bb
     | SWhile (e, sl) -> 
       (*
       FNAME:
@@ -359,8 +359,10 @@ let translate (sprogram : sprogram) =
     List.iter2 (fun decl -> add_formal scoped_local_variables (snd decl) (fst decl) ) formals (Array.to_list (L.params the_function));
     
     let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables in
-    
-    add_terminal func_builder (L.build_ret (L.const_int i32_t 0))  
+    if rtyp = A.NoneType then
+      ignore(L.build_ret_void func_builder)
+    else
+      add_terminal func_builder (L.build_ret (L.const_int i32_t 0))
   | SDecl (name, typ, expr_opt) ->
     let default_const = function
       | A.Int -> L.const_int i32_t 0
