@@ -1,7 +1,6 @@
-c: int = 4
-
 def main() -> int:
-	b: int = 3
+	c: int[] = [1,2,3]
+	b: int = 0
 
 	if True:
 		a: int = 2

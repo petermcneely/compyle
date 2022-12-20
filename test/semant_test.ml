@@ -141,29 +141,7 @@ run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks array literal" in
 let actual = build_main "[2, 3]" in
-let expected = build_expected_main [ "(int[] : [(int : 2), (int : 3)])" ] in
-run_test ~debug:false test_case (actual ^ "\n") expected;
-
-let test_case = "Semantically checks multi-dim array literal" in
-let actual = build_main "[[2,3],[3,4]]" in
-let expected =
-  build_expected_main
-    [
-      "(int[][] : [(int[] : [(int : 2), (int : 3)]), (int[] : [(int : 3), (int \
-       : 4)])])";
-    ]
-in
-run_test ~debug:false test_case (actual ^ "\n") expected;
-
-let test_case = "Semantically checks multi-dim tuple literal" in
-let actual = build_main "((4,True),(5,False))" in
-let expected =
-  build_expected_main
-    [
-      "(tuple : ((tuple : ((int : 4), (bool : True))), (tuple : ((int : 5), \
-       (bool : False)))))";
-    ]
-in
+let expected = build_expected_main [ "(int[] of length 2 : [(int : 2), (int : 3)])" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
 let test_case = "Semantically checks tuple literal" in
@@ -262,7 +240,7 @@ let actual = build_main "for x in [1, 2, 3]:\r\n\t\ty: int = 5\r\n\t\tbreak" in
 let expected =
   build_expected_main
     [
-      "for x in (int[] : [(int : 1), (int : 2), (int : 3)]):";
+      "for x in (int[] of length 3 : [(int : 1), (int : 2), (int : 3)]):";
       "y: int(int : 5)";
       "break";
     ]
