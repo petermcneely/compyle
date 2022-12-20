@@ -1,4 +1,3 @@
-x: int[]
-
 def main() -> int:
+	x: int[]
 	return 0

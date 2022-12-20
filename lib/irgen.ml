@@ -96,7 +96,7 @@ let translate (sprogram : sprogram) =
           (String.sub s 1 (String.length s - 2))
           "" builder
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
-    | SArrayLit l -> raise (Failure " Unimplemented")
+    | SArrayLit l -> raise (Failure "Unimplemented")
     | STupleLit _ -> raise (Failure " Unimplemented")
     | SBinop (e1, op, e2) -> (
         let ty = fst e1 in

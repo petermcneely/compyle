@@ -263,15 +263,17 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let some_sexpr =
           match expr_opt with
           | None -> None
-          | Some e ->
+          | Some e -> (
               let sexpr = check_expr (decl_vars, decl_funcs, e) in
-              if t = fst sexpr then Some sexpr
-              else
-                raise
-                  (Failure
-                     ("Incompatible type. Expected Var type:" ^ string_of_typ t
-                    ^ " Received expression type: "
-                     ^ string_of_typ (fst sexpr)))
+              match (t, fst sexpr) with
+              | Array (t1, dim1, len1), Array (t2, dim2, len2) when t1 = t2 ->
+                  Some sexpr
+              | _ ->
+                  raise
+                    (Failure
+                       ("Incompatible type. Expected Var type:"
+                      ^ string_of_typ t ^ " Received expression type: "
+                       ^ string_of_typ (fst sexpr))))
         in
         SDecl (id, t, some_sexpr)
   in
