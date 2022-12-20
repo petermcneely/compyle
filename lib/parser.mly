@@ -137,13 +137,17 @@ expr:
 	| expr OR expr    { Binop($1, Or, $3)  }
 	| NOT expr        { Not($2)      }
 
+typ_list:
+	| typ { [$1] }
+	| typ COMMA typ_list { $1 :: $3 }
+
 typ:
 	INT { Int }
 	| BOOL { Bool }
 	| FLOAT { Float }
 	| STRING { String }
 	| NONETYPE { NoneType }
-	| TUPLE { Tuple }
+	| TUPLE LT typ_list GT { Tuple($3) }
 	| STRING_ARRAY { Array(String, 0) }
 	| INT_ARRAY { Array(Int, 0) }
 	| FLOAT_ARRAY { Array(Float, 0) }

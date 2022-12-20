@@ -4,24 +4,24 @@ def fib(n: int) -> int:
 	else:
 		return fib(n - 1) + fib(n - 2)
 
-def foo() -> None:
-	print("returning none")
-
 def main() -> int:
-	n: int = 0
-	while n < 10:
-		print("|")
-		print(fib(n))
-		n += 1	
-	
-	"""
-	m: int = 0
-	while True:
-		if n < 6:
-			break
-		n += 1
-	"""
+	c: tuple<bool, int, float, string> = (True,2,3.0, "hello world")
+	b: int = 0
+	d: bool = False
+	e: bool = False
 
-	foo()
+	x: tuple<int, float>
+	x = (4, 4.0)
 
-	return 0
+	if True:
+		a: int = 2
+		if d:
+			z: int = 4
+			return a + z
+		elif e:
+			return b
+		else:
+			return b
+
+	else:
+		return b

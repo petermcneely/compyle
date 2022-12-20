@@ -144,10 +144,29 @@ let actual = build_main "[2, 3]" in
 let expected = build_expected_main [ "(int[] of length 2 : [(int : 2), (int : 3)])" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
 
-let test_case = "Semantically checks tuple literal" in
-let actual = build_main "(4, 4.)" in
-let expected = build_expected_main [ "(tuple : ((int : 4), (float : 4.)))" ] in
+let test_case = "Semantically checks tuple literal declaration of correct types" in
+let actual = build_main "x: tuple<int, float> = (4, 4.)" in
+let expected = build_expected_main [ "x: tuple<int, float>(tuple<int, float> : ((int : 4), (float : 4.)))" ] in
 run_test ~debug:false test_case (actual ^ "\n") expected;
+
+let test_case = "Semantically checks reject tuple literal declaration of incorrect types" in
+let actual = build_main "x: tuple<int, float> = (True, 4.)" in
+try run_test ~debug:false test_case (actual ^ "\n") []
+with
+| Failure e when e = "Incompatible type. Expected Var type: tuple<int, float> Received expression type: tuple<bool, float>"
+-> pass_test ();
+
+let test_case = "Semantically checks tuple literal assignment of correct types" in
+let actual = build_main "x: tuple<int, float>\n\tx = (4, 4.0)" in
+let expected = build_expected_main [ "x: tuple<int, float>";"(tuple<int, float> : x = (tuple<int, float> : ((int : 4), (float : 4.))))" ] in
+run_test ~debug:false test_case (actual ^ "\n") expected;
+
+let test_case = "Semantically checks reject tuple literal assignment of incorrect types" in
+let actual = build_main "x: tuple<int, float>\n\tx = (True, 4.0)" in
+try run_test ~debug:false test_case (actual ^ "\n") []
+with
+| Failure e when e = "Incompatible type. Expected Var type: tuple<int, float> Received expression type: tuple<bool, float>"
+-> pass_test ();
 
 let test_case = "Semantically checks math binary operation for int" in
 let actual = build_main "4 + 4" in
@@ -297,7 +316,7 @@ try run_test ~debug:false test_case (addition ^ "\n") []
 with
 | Failure e
 when e
-      = "Incompatible type. Expected Var type:int Received expression type: \
+      = "Incompatible type. Expected Var type: int Received expression type: \
         None"
 -> pass_test ();
 

@@ -3,7 +3,7 @@ type typ =
   | Bool
   | Float
   | String
-  | Tuple
+  | Tuple of typ list (* empty list is impossible due to parser *)
   | Array of typ * int
   | EmptyArray
   | NoneType
@@ -82,7 +82,7 @@ let rec string_of_typ = function
   | Float -> "float"
   | String -> "string"
   | NoneType -> "None"
-  | Tuple -> "tuple"
+  | Tuple (t_list) -> "tuple" ^ "<" ^ (String.concat ", " (List.map string_of_typ t_list)) ^ ">"
   | EmptyArray -> "[]"
   | Array (t, length) -> string_of_typ t ^ "[] of length " ^ string_of_int length
 
