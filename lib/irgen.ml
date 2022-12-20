@@ -94,19 +94,21 @@ let translate (sprogram : sprogram) =
     | SFloatLit i -> L.const_float f32_t i
     | SStringLit s -> L.build_global_stringptr (String.sub s 1 ((String.length s) - 2)) "" builder
     | SBoolLit b -> L.const_int i1_t (if b = true then 1 else 0)
-    | SArrayLit l -> if List.length l = 0 then L.const_array i32_t [||] else (
-      let head = List.hd l in
-      let head_type, _ = head in
-      let size = List.length l in
-      let arr = Array.of_list l in
-      let sarr = Array.map (build_IR_on_expr builder) arr in
-      match head_type with
-      | Int -> L.const_array i32_t sarr
-      | Float -> L.const_array f32_t sarr
-      | Bool -> L.const_array i1_t sarr
-      (*| String -> L.const_array (L.array_type (s32_t size)*)
-      (*| Tuple*)
-      | _ -> raise (Failure "Multi-Dim Array"))
+    | SArrayLit l -> raise (Failure "Unimplemented")
+    | SArrayLit l -> ( 
+      if List.length l = 0
+        then L.const_array i32_t [||]
+        else (
+          let head = List.hd l in
+          let head_type, _ = head in
+          let size = List.length l in
+          let arr = Array.of_list l in
+          let sarr = Array.map (build_IR_on_expr builder) arr in
+          match head_type with
+          | Int -> L.const_array i32_t sarr
+          | Float -> L.const_array f32_t sarr
+          | Bool -> L.const_array i1_t sarr
+          | _ -> raise (Failure "Multi-Dim Array")))
     | STupleLit _ -> raise (Failure " Unimplemented")
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
