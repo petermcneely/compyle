@@ -225,7 +225,23 @@ let translate (sprogram : sprogram) =
   in
   let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) = function
     (* match sstmt*)
-    | SBreak -> ignore(L.build_ret_void builder); builder
+    | SBreak -> (
+      
+      let block = L.insertion_block builder in
+      print_endline (L.value_name (L.value_of_block block));
+      let rec find_while_end b =
+        let iter = L.block_succ b in
+        let (val_name, block) = match iter with
+          | L.At_end a -> (L.value_name a, L.block_of_value a)
+          | L.Before b -> (L.value_name (L.value_of_block b), b) in
+        print_endline val_name;
+        if String.length val_name  >= 9 && (String.sub val_name 0 9) = "while_end" then
+          block
+        else
+          find_while_end block
+      in
+      let while_end = find_while_end block in
+      ignore (L.build_br while_end builder); builder)
     | SExpr e -> 
       ignore(build_IR_on_expr builder e local_variables global_variables); builder
     | SFunction _ -> builder
@@ -310,9 +326,11 @@ let translate (sprogram : sprogram) =
       let bool_val = build_IR_on_expr while_builder e local_variables global_variables in
 
       let body_bb = L.append_block context "while_body" the_function in
+      let end_bb = L.append_block context "while_end" the_function in 
+      
       add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables) build_br_while;
 
-      let end_bb = L.append_block context "while_end" the_function in 
+      
 
       ignore(L.build_cond_br bool_val body_bb end_bb while_builder);
       L.builder_at_end context end_bb

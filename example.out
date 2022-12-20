@@ -1,29 +1,32 @@
+; ModuleID = 'compyle'
+source_filename = "compyle"
 
+declare i32 @printf(i8*, ...)
 
-Parsed Program: 
+define i32 @main() {
+entry:
+  %x = alloca i32, align 4
+  store i32 3, i32* %x, align 4
+  br label %while
 
-def fib(n: int) -> int:
-if (bool : (bool : (int : n) == (int : 1)) or (bool : (int : n) == (int : 0))):
-return (int : 1)
-else:
-return (int : (int : fib((int : (int : n) - (int : 1)))) + (int : fib((int : (int : n) - (int : 2)))))
-def main() -> int:
-c: tuple<bool, int, float, string>(tuple<bool, int, float, string> : ((bool : True), (int : 2), (float : 3.), (string : "hello world")))
-b: int(int : 0)
-d: bool(bool : False)
-e: bool(bool : False)
-x: tuple<int, float>
-(tuple<int, float> : x = (tuple<int, float> : ((int : 4), (float : 4.))))
-if (bool : True):
-a: int(int : 2)
-if (bool : d):
-z: int(int : 4)
-return (int : (int : a) + (int : z))
-else:
-if (bool : e):
-return (int : b)
-else:
-return (int : b)
-else:
-return (int : b)
-<EOF>
+while:                                            ; preds = %while_end, %entry
+  br i1 true, label %while_body, label %while_end3
+
+while_body:                                       ; preds = %while
+  %0 = load i32, i32* %x, align 4
+  %tmp = add i32 %0, 1
+  store i32 %tmp, i32* %x, align 4
+  br label %while1
+
+while1:                                           ; preds = %while_body
+  br i1 true, label %while_body2, label %while_end
+
+while_body2:                                      ; preds = %while1
+  ret i32 1
+
+while_end:                                        ; preds = %while1
+  br label %while
+
+while_end3:                                       ; preds = %while
+  ret i32 0
+}
