@@ -283,7 +283,7 @@ let translate (sprogram : sprogram) =
       let pred_block_name = L.value_name (L.value_of_block pred_block) in
           
       let instr_count = L.fold_left_instrs (fun agg _ -> agg + 1) 0 next_bb in
-      if instr_count = 0 && ((String.sub pred_block_name 0 4)= "next") then
+      if instr_count = 0 && ((String.sub pred_block_name 0 4) = "next") then
         ignore(L.build_br pred_block (L.builder_at_end context next_bb));
       
       L.builder_at_end context next_bb
