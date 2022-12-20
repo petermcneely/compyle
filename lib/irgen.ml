@@ -320,18 +320,48 @@ let translate (sprogram : sprogram) =
         END:
       *)
 
-      let the_function = L.block_parent (L.insertion_block builder) in 
-      let head_bb = L.append_block context "head" the_function in  
-      let loop_bb = L.append_block context "loop" the_function in 
-      let end_bb = L.append_block context "end" the_function in 
+      (
+        match itr with 
+        | (_, SArrayLit i) -> 
+          (let itr_length = List.length i in 
+          let llvals = List.map (build_IR_on_expr builder) i in 
+          let llarr = Array.of_list llvals in 
+          let start_val = llarr.(0) in 
+          (* Make the new basic block for the loop header, inserting after current
+          * block. *)
+          let preheader_bb = L.insertion_block builder in
+          let the_function = L.block_parent preheader_bb in
+          let loop_bb = L.append_block context "loop" the_function in 
+          let after_bb = L.append_block context "after" the_function in
 
-      let start_val = build_IR_on_expr builder itr local_variables global_variables in (* itr.code *)
-      ignore(L.build_br loop_bb builder); (* jmp LOOP *)
+          (* Insert an explicit fall through from the current block to the
+          * loop_bb. *)
+          ignore(L.build_br loop_bb builder);
 
-      ignore(L.position_at_end loop_bb builder);
-      let variable = L.build_phi [(start_val, head_bb)] var_name builder in 
+          (* Start insertion in loop_bb. *)
+          L.position_at_end loop_bb builder;
+          let variable = L.build_phi [(start_val, preheader_bb)] var_name builder in
 
-      build_IR_on_stmt_list builder stmts local_variables global_variables
+          let rec build_loop_helper (index: int) : L.llbuilder = 
+            if (index < itr_length) then 
+              (* Start the PHI node with an entry for start. *)
+              Hashtbl.add local_variables var_name (A.Int, variable); (* TODO: Get the type of variable *)
+              ignore(build_IR_on_stmt_list builder body);
+              Hashtbl.remove local_variables var_name;
+              let loop_end_bb = L.insertion_block builder in 
+              let next_var = llarr.(index+1) in 
+              L.add_incoming (next_var, loop_end_bb) variable;
+              build_loop_helper (index+1);
+            else
+              L.position_at_end after_bb;
+              builder  
+          )
+        | _ -> raise (Failure "Developer Error")
+      )
+
+      
+
+     
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
