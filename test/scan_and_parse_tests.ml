@@ -103,7 +103,7 @@ run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses arrays" in
 let comparing = "x: bool[]\nx = [True, False]" in
-let expected = [ "x: bool[]"; "x = [True, False]"; "" ] in
+let expected = [ "x: bool[] of length 0"; "x = [True, False]"; "" ] in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses Ints" in
@@ -170,20 +170,6 @@ run_test ~debug:false test_case (comparing ^ "\n") expected;
 let test_case = "Parses While Loop" in
 let comparing = "while x > 5:\r\n\n\ty = 5\r\n" in
 let expected = [ "while x > 5:"; "y = 5"; "" ] in
-run_test ~debug:false test_case (comparing ^ "\n") expected;
-
-let test_case = "Parses multi-dimensional arrays" in
-let comparing =
-  "x: bool[][]\n\
-   x = [[True, True], [False, False], [True, False], [False, True]]"
-in
-let expected =
-  [
-    "x: bool[][]";
-    "x = [[True, True], [False, False], [True, False], [False, True]]";
-    "";
-  ]
-in
 run_test ~debug:false test_case (comparing ^ "\n") expected;
 
 let test_case = "Parses declaring and assigning on the same line" in

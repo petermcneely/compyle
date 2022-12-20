@@ -91,9 +91,8 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
               let head = List.hd s_el in
               let head_type, _ = head in
               let resolve_array_type = function
-                | Array (array_typ, dimension) ->
-                    Array (array_typ, dimension + 1)
-                | _ as s -> Array (s, 1)
+              | Array (array_typ, i) -> Array (array_typ, List.length s_el)
+              | _ as s -> Array (s, List.length s_el)
               in
               (resolve_array_type head_type, SArrayLit s_el)
         in

@@ -89,7 +89,7 @@ let rec string_of_typ = function
   | NoneType -> "None"
   | Tuple -> "tuple"
   | EmptyArray -> "[]"
-  | Array (t, dimensions) -> string_of_typ t ^ string_of_dimensions dimensions
+  | Array (t, length) -> string_of_typ t ^ "[] of length " ^ string_of_int length
 
 and string_of_dimensions (dimensions : int) : string =
   if dimensions = 0 then "" else "[]" ^ string_of_dimensions (dimensions - 1)

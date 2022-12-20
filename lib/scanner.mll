@@ -125,15 +125,13 @@ and code manager = parse
 | "tuple"                                                   { TUPLE }
 | ("string" | "int" | "float" | "bool") ("[]")+ as a {
 
-  let count_dimensions =
-    String.fold_left (fun acc c -> if c = '[' then acc + 1 else acc) 0 a in
 
   let get_array_token (s: string) =
     match s with
-      _ when String.starts_with ~prefix:"int" s -> INT_ARRAY(count_dimensions)
-    | _ when String.starts_with ~prefix:"string" s -> STRING_ARRAY(count_dimensions)
-    | _ when String.starts_with ~prefix:"float" s -> FLOAT_ARRAY(count_dimensions)
-    | _ when String.starts_with ~prefix:"bool" s -> BOOL_ARRAY(count_dimensions)
+      _ when String.starts_with ~prefix:"int" s -> INT_ARRAY(0)
+    | _ when String.starts_with ~prefix:"string" s -> STRING_ARRAY(0)
+    | _ when String.starts_with ~prefix:"float" s -> FLOAT_ARRAY(0)
+    | _ when String.starts_with ~prefix:"bool" s -> BOOL_ARRAY(0)
     | _ -> raise (Failure "Scanning error. Scanning an unsupported array type")
   in
   
