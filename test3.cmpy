@@ -1,0 +1,21 @@
+"""
+A test to showcase different features of ComPyle
+"""
+def tupes() -> int:
+	x: tuple<bool, int> = (True, 5)
+	a: int[] = [1, 2, 3]
+	y: bool = True
+	z: int = 7
+	while y == True and z > 3:
+		if z < 5 :
+			break
+		z -= 1
+	return z
+
+def main() -> int:
+	q: int = tupes()
+	r: int = q + 5
+	print(r)
+	m: string = "Hello World"
+	print(m)
+	return 0

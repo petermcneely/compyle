@@ -1,0 +1,28 @@
+"""
+A test to showcase different features of ComPyle
+"""
+
+x: bool = True
+y: bool = False
+
+def while_loop() -> int:
+	z: int = 3
+	while z >= 0:
+		print(z)
+		z -= 1
+		if x == True:
+			print("yay")
+		else:
+			print("oops")
+
+		if y == True:
+			print("oops")
+		else:
+			print("yay")
+	return z
+
+def main() -> int:
+	b: int = while_loop()
+	p: bool = not x
+	print(p)
+	return 0
