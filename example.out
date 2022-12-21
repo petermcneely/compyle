@@ -1,29 +1,44 @@
+; ModuleID = 'compyle'
+source_filename = "compyle"
 
+@intgsp = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 
-Parsed Program: 
+declare i32 @printf(i8*, ...)
 
-def fib(n: int) -> int:
-if (bool : (bool : (int : n) == (int : 1)) or (bool : (int : n) == (int : 0))):
-return (int : 1)
-else:
-return (int : (int : fib((int : (int : n) - (int : 1)))) + (int : fib((int : (int : n) - (int : 2)))))
-def main() -> int:
-c: tuple<bool, int, float, string>(tuple<bool, int, float, string> : ((bool : True), (int : 2), (float : 3.), (string : "hello world")))
-b: int(int : 0)
-d: bool(bool : False)
-e: bool(bool : False)
-x: tuple<int, float>
-(tuple<int, float> : x = (tuple<int, float> : ((int : 4), (float : 4.))))
-if (bool : True):
-a: int(int : 2)
-if (bool : d):
-z: int(int : 4)
-return (int : (int : a) + (int : z))
-else:
-if (bool : e):
-return (int : b)
-else:
-return (int : b)
-else:
-return (int : b)
-<EOF>
+define i32 @main() {
+entry:
+  %x = alloca i32, align 4
+  store i32 3, i32* %x, align 4
+  br label %while
+
+while:                                            ; preds = %next, %entry
+  br i1 true, label %while_body, label %while_end
+
+while_body:                                       ; preds = %while
+  %0 = load i32, i32* %x, align 4
+  %tmp = add i32 %0, 1
+  store i32 %tmp, i32* %x, align 4
+  %x1 = load i32, i32* %x, align 4
+  %tmp2 = icmp slt i32 %x1, 5
+  br i1 %tmp2, label %then, label %else
+
+while_end:                                        ; preds = %while
+  %x5 = load i32, i32* %x, align 4
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @intgsp, i32 0, i32 0), i32 %x5)
+  ret i32 0
+
+then:                                             ; preds = %while_body
+  %1 = load i32, i32* %x, align 4
+  %tmp3 = add i32 %1, 1
+  store i32 %tmp3, i32* %x, align 4
+  br label %next
+
+else:                                             ; preds = %while_body
+  %2 = load i32, i32* %x, align 4
+  %tmp4 = sub i32 %2, 1
+  store i32 %tmp4, i32* %x, align 4
+  br label %next
+
+next:                                             ; preds = %else, %then
+  br label %while
+}

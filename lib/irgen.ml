@@ -224,9 +224,13 @@ let translate (sprogram : sprogram) =
       let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) (List.rev args)) in 
       L.build_call f_addr (Array.of_list llargs) "" builder
   in
-  let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) = function
+  let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) (break_block: L.llbasicblock option) = function
     (* match sstmt*)
-    | SBreak -> ignore(L.build_ret_void builder); builder
+    | SBreak -> (
+      let _ = match break_block with
+        | None -> ()
+        | Some b -> ignore(L.build_br b builder) in
+      builder)
     | SExpr e -> 
       ignore(build_IR_on_expr builder e local_variables global_variables); builder
     | SFunction _ -> builder
@@ -268,10 +272,10 @@ let translate (sprogram : sprogram) =
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
       let then_builder = L.builder_at_end context then_bb in 
-      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables);
+      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables None);
 
       let else_builder = L.builder_at_end context else_bb in 
-      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables);
+      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables None);
 
       let build_br_next = L.build_br next_bb in (* partial function *)
       add_terminal (L.builder_at_end context then_bb) build_br_next;
@@ -311,9 +315,9 @@ let translate (sprogram : sprogram) =
       let bool_val = build_IR_on_expr while_builder e local_variables global_variables in
 
       let body_bb = L.append_block context "while_body" the_function in
-      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables) build_br_while;
-
       let end_bb = L.append_block context "while_end" the_function in 
+      let opt = Some end_bb in
+      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables opt) build_br_while;
 
       ignore(L.build_cond_br bool_val body_bb end_bb while_builder);
       L.builder_at_end context end_bb
@@ -342,7 +346,7 @@ let translate (sprogram : sprogram) =
       ignore(L.position_at_end loop_bb builder);
       let variable = L.build_phi [(start_val, head_bb)] var_name builder in 
 
-      build_IR_on_stmt_list builder stmts local_variables global_variables
+      build_IR_on_stmt_list builder stmts local_variables global_variables None
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
@@ -375,7 +379,7 @@ let translate (sprogram : sprogram) =
       Hashtbl.add hash_table name (t, local) in 
     List.iter2 (fun decl -> add_formal scoped_local_variables (snd decl) (fst decl) ) formals (Array.to_list (L.params the_function));
     
-    let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables in
+    let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables None in
     if rtyp = A.NoneType then
       ignore(L.build_ret_void func_builder)
     else
@@ -398,8 +402,8 @@ let translate (sprogram : sprogram) =
       | Some sexpr -> initialized_const (snd sexpr) in
     Hashtbl.add global_variables name (typ, (L.define_global name initial_value the_module));
   | _ -> ()
-  and build_IR_on_stmt_list builder sl local_variables global_variables = 
-      List.fold_left (fun b s -> build_IR_on_stmt b local_variables global_variables s) builder sl 
+  and build_IR_on_stmt_list builder sl local_variables global_variables (break_block: L.llbasicblock option) = 
+      List.fold_left (fun b s -> build_IR_on_stmt b local_variables global_variables break_block s) builder sl 
   in
   (* Unsure the usage of L.builder here but it helps compile for now*)
   (*List.map (build_IR_on_stmt L.builder) sprogram;*)
