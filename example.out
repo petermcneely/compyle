@@ -8,15 +8,13 @@ entry:
   br label %loop
 
 loop:                                             ; preds = %entry
-  %i = phi i32 [ 1, %entry ], [ 2, %loop ], [ 3, %loop ], [ 4, %loop ], [ 4, %loop ]
+  %i = phi i32 [ 1, %entry ], [ 2, %loop ], [ 3, %loop ], [ 4, %loop ]
   %z = alloca i32, align 4
   store i32 3, i32* %z, align 4
   %z1 = alloca i32, align 4
   store i32 3, i32* %z1, align 4
   %z2 = alloca i32, align 4
   store i32 3, i32* %z2, align 4
-  %z3 = alloca i32, align 4
-  store i32 3, i32* %z3, align 4
 
 after:                                            ; No predecessors!
   ret i32 0

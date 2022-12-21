@@ -339,22 +339,19 @@ let translate (sprogram : sprogram) =
                   print(x) 
             *)
             ignore(build_IR_on_stmt_list builder body local_variables global_variables);
-            Hashtbl.remove local_variables var_name;
+            (* Hashtbl.remove local_variables var_name; *)
             let loop_end_bb = L.insertion_block builder in 
             
-            let next_var = if (index + 1 != itr_length) then 
-              llarr.(index+1)
-            else
-              llarr.(index)
-            in 
+            let next_var = llarr.(index) in 
             L.add_incoming (next_var, loop_end_bb) variable;
+            
             build_loop_helper (index+1)
           ) else (
             L.position_at_end after_bb builder;
             builder 
           )
           in 
-          build_loop_helper 0
+          build_loop_helper 1
       | _ -> raise (Failure "Developer Error")
       )
       
