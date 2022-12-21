@@ -272,10 +272,10 @@ let translate (sprogram : sprogram) =
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
       let then_builder = L.builder_at_end context then_bb in 
-      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables None);
+      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables break_block);
 
       let else_builder = L.builder_at_end context else_bb in 
-      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables None);
+      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables break_block);
 
       let build_br_next = L.build_br next_bb in (* partial function *)
       add_terminal (L.builder_at_end context then_bb) build_br_next;
@@ -322,7 +322,54 @@ let translate (sprogram : sprogram) =
       ignore(L.build_cond_br bool_val body_bb end_bb while_builder);
       L.builder_at_end context end_bb
       
-    | SFor (var_name, itr, stmts) -> 
+    | SFor (var_name, itr, body) -> 
+      (match itr with 
+      | (t, SArrayLit i) -> 
+        let itr_length = List.length i in 
+        let llvals = List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) i in 
+        let llarr = Array.of_list llvals in 
+        let start_val = llarr.(0) in (* for i in [1, 2, 3]*)
+        (* Make the new basic block for the loop header, inserting after current
+        * block. *)
+        let preheader_bb = L.insertion_block builder in
+        let the_function = L.block_parent preheader_bb in
+        let loop_bb = L.append_block context "loop" the_function in 
+        let after_bb = L.append_block context "after" the_function in
+
+        (* Insert an explicit fall through from the current block to the
+        * loop_bb. *)
+        ignore(L.build_br loop_bb builder);
+
+        (* Start insertion in loop_bb. *)
+        L.position_at_end loop_bb builder;
+        let variable = L.build_phi [(start_val, preheader_bb)] var_name builder in
+        (* i = 1 *)
+
+        let rec build_loop_helper (index: int) : L.llbuilder = 
+          if (index < itr_length) then (
+            (* Start the PHI node with an entry for start. *)
+            Hashtbl.add local_variables var_name (t, variable); (* TODO: Get the type of variable *)
+            (* for i in [1, 2, 3]:
+                  x = 2 
+                  print(x) 
+            *)
+            ignore(build_IR_on_stmt_list builder body local_variables global_variables break_block);
+            (* Hashtbl.remove local_variables var_name; *)
+            let loop_end_bb = L.insertion_block builder in 
+            
+            let next_var = llarr.(index) in 
+            L.add_incoming (next_var, loop_end_bb) variable;
+            
+            build_loop_helper (index+1)
+          ) else (
+            L.position_at_end after_bb builder;
+            builder 
+          )
+          in 
+          build_loop_helper 1
+      | _ -> raise (Failure "Developer Error")
+      )
+      
       (* 
         SFor(var_name, itr, stmts) -> 
         HEAD: 
@@ -334,19 +381,6 @@ let translate (sprogram : sprogram) =
           jmp HEAD? 
         END:
       *)
-
-      let the_function = L.block_parent (L.insertion_block builder) in 
-      let head_bb = L.append_block context "head" the_function in  
-      let loop_bb = L.append_block context "loop" the_function in 
-      let end_bb = L.append_block context "end" the_function in 
-
-      let start_val = build_IR_on_expr builder itr local_variables global_variables in (* itr.code *)
-      ignore(L.build_br loop_bb builder); (* jmp LOOP *)
-
-      ignore(L.position_at_end loop_bb builder);
-      let variable = L.build_phi [(start_val, head_bb)] var_name builder in 
-
-      build_IR_on_stmt_list builder stmts local_variables global_variables None
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
