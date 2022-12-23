@@ -1,17 +1,17 @@
-def fib(n: int) -> int:
-	if n == 0:
-		return 1
-	elif n == 1:
-		return 1
-	else:
-		return fib(n - 1) + fib(n - 2)
 
 def main() -> int:
 	y: int = 0
-	# calculate the first 10 fibonnaci numbers
-	while y < 10:
-		print(fib(y))
-		print("|")
+	while y <= 10:
+		while y <= 10:
+			while y <= 10:
+				if False:
+					print("nope")
+				elif True:
+					if True:
+						y += 1
+
+	while y <= 100:
 		y += 1
 	
+	print(y)
 	return 0

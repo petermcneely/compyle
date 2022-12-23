@@ -1,67 +1,94 @@
 ; ModuleID = 'compyle'
 source_filename = "compyle"
 
+@0 = private unnamed_addr constant [5 x i8] c"nope\00", align 1
 @intgsp = private unnamed_addr constant [3 x i8] c"%d\00", align 1
-@0 = private unnamed_addr constant [12 x i8] c"Hello World\00", align 1
 
 declare i32 @printf(i8*, ...)
 
-define i32 @tupes() {
-entry:
-  %x = alloca { i1, i32 }, align 8
-  store { i1, i32 } { i1 true, i32 5 }, { i1, i32 }* %x, align 4
-  %a = alloca [3 x i32], align 4
-  store [3 x i32] [i32 1, i32 2, i32 3], [3 x i32]* %a, align 4
-  %y = alloca i1, align 1
-  store i1 true, i1* %y, align 1
-  %z = alloca i32, align 4
-  store i32 7, i32* %z, align 4
-  br label %while
-
-while:                                            ; preds = %next, %entry
-  %y1 = load i1, i1* %y, align 1
-  %tmp = icmp eq i1 %y1, true
-  %z2 = load i32, i32* %z, align 4
-  %tmp3 = icmp sgt i32 %z2, 3
-  %tmp4 = and i1 %tmp, %tmp3
-  br i1 %tmp4, label %while_body, label %while_end
-
-while_body:                                       ; preds = %while
-  %z5 = load i32, i32* %z, align 4
-  %tmp6 = icmp slt i32 %z5, 5
-  br i1 %tmp6, label %then, label %else
-
-while_end:                                        ; preds = %while, %then
-  %z8 = load i32, i32* %z, align 4
-  ret i32 %z8
-
-then:                                             ; preds = %while_body
-  br label %while_end
-
-else:                                             ; preds = %while_body
-  br label %next
-
-next:                                             ; preds = %else
-  %0 = load i32, i32* %z, align 4
-  %tmp7 = sub i32 %0, 1
-  store i32 %tmp7, i32* %z, align 4
-  br label %while
-}
-
 define i32 @main() {
 entry:
-  %0 = call i32 @tupes()
-  %q = alloca i32, align 4
-  store i32 %0, i32* %q, align 4
-  %q1 = load i32, i32* %q, align 4
-  %tmp = add i32 %q1, 5
-  %r = alloca i32, align 4
-  store i32 %tmp, i32* %r, align 4
-  %r2 = load i32, i32* %r, align 4
-  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @intgsp, i32 0, i32 0), i32 %r2)
-  %m = alloca i8*, align 8
-  store i8* getelementptr inbounds ([12 x i8], [12 x i8]* @0, i32 0, i32 0), i8** %m, align 8
-  %m3 = load i8*, i8** %m, align 8
-  %printf4 = call i32 (i8*, ...) @printf(i8* %m3)
+  %y = alloca i32, align 4
+  store i32 0, i32* %y, align 4
+  br label %while
+
+while:                                            ; preds = %elihw6, %entry
+  %y1 = load i32, i32* %y, align 4
+  %tmp = icmp sle i32 %y1, 10
+  br i1 %tmp, label %while_body, label %elihw
+
+while_body:                                       ; preds = %while
+  br label %while2
+
+elihw:                                            ; preds = %while
+  br label %while19
+
+while2:                                           ; preds = %elihw11, %while_body
+  %y3 = load i32, i32* %y, align 4
+  %tmp4 = icmp sle i32 %y3, 10
+  br i1 %tmp4, label %while_body5, label %elihw6
+
+while_body5:                                      ; preds = %while2
+  br label %while7
+
+elihw6:                                           ; preds = %while2
+  br label %while
+
+while7:                                           ; preds = %fi, %while_body5
+  %y8 = load i32, i32* %y, align 4
+  %tmp9 = icmp sle i32 %y8, 10
+  br i1 %tmp9, label %while_body10, label %elihw11
+
+while_body10:                                     ; preds = %while7
+  br i1 false, label %then, label %else
+
+elihw11:                                          ; preds = %while7
+  br label %while2
+
+then:                                             ; preds = %while_body10
+  %printf = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([5 x i8], [5 x i8]* @0, i32 0, i32 0))
+  br label %fi
+
+else:                                             ; preds = %while_body10
+  br i1 true, label %then12, label %else13
+
+fi:                                               ; preds = %then, %fi14
+  br label %while7
+
+then12:                                           ; preds = %else
+  br i1 true, label %then15, label %else16
+
+else13:                                           ; preds = %else
+  br label %fi14
+
+fi14:                                             ; preds = %else13, %fi17
+  br label %fi
+
+then15:                                           ; preds = %then12
+  %0 = load i32, i32* %y, align 4
+  %tmp18 = add i32 %0, 1
+  store i32 %tmp18, i32* %y, align 4
+  br label %fi17
+
+else16:                                           ; preds = %then12
+  br label %fi17
+
+fi17:                                             ; preds = %else16, %then15
+  br label %fi14
+
+while19:                                          ; preds = %while_body22, %elihw
+  %y20 = load i32, i32* %y, align 4
+  %tmp21 = icmp sle i32 %y20, 100
+  br i1 %tmp21, label %while_body22, label %elihw23
+
+while_body22:                                     ; preds = %while19
+  %1 = load i32, i32* %y, align 4
+  %tmp24 = add i32 %1, 1
+  store i32 %tmp24, i32* %y, align 4
+  br label %while19
+
+elihw23:                                          ; preds = %while19
+  %y25 = load i32, i32* %y, align 4
+  %printf26 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @intgsp, i32 0, i32 0), i32 %y25)
   ret i32 0
 }
