@@ -8,6 +8,16 @@ open Sast
 
 module StringMap = Map.Make(String)
 
+type variable_tables = {
+  local_variables: (string, A.typ * L.llvalue) Hashtbl.t;
+  global_variables: (string, A.typ * L.llvalue) Hashtbl.t;
+}
+
+type block_context = {
+  break_or_continue_block: L.llbasicblock option;
+  nested_continuation_block: L.llbasicblock option;
+}
+
 (* translate : Sast.program -> Llvm.module *)
 (* Sast.program is a tuple of globals (vars) and functions *)
 let translate (sprogram : sprogram) =
@@ -37,6 +47,22 @@ let translate (sprogram : sprogram) =
     | A.Tuple (l) -> let arr = Array.of_list (List.map ltype_of_typ l) in
                      L.struct_type context arr
     | _ -> raise (Failure "Unimplemented")
+  in
+
+  let get_default_llvalue = function
+    | A.Int -> L.const_int i32_t 0
+    | A.Float -> L.const_float f32_t 0.
+    | A.String -> L.const_stringz context ""
+    | A.Bool -> L.const_int i1_t 0
+    | _ -> raise (Failure "wrong default type")
+  in
+
+  let get_initialized_const = function
+    | SIntLit i -> L.const_int i32_t i
+    | SFloatLit f -> L.const_float f32_t f
+    | SStringLit s -> L.const_stringz context (String.sub s 1 ((String.length s) - 2))
+    | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
+    | _ -> raise (Failure "wrong constant type")
   in
 
   let printf_t : L.lltype =
@@ -90,7 +116,7 @@ let translate (sprogram : sprogram) =
   in
 
   (* More should be filled in here *)
-  let rec build_IR_on_expr builder ((_, e) : sexpr) local_variables (global_variables) =
+  let rec build_IR_on_expr builder ((_, e) : sexpr) (variable_tables: variable_tables) =
     match e with
     | SIntLit i -> L.const_int i32_t i 
     | SFloatLit i -> L.const_float f32_t i
@@ -104,7 +130,7 @@ let translate (sprogram : sprogram) =
           let head_type, _ = head in
           let size = List.length l in
           let arr = Array.of_list l in
-          let sarr = Array.map (fun i -> build_IR_on_expr builder i local_variables global_variables) arr in
+          let sarr = Array.map (fun i -> build_IR_on_expr builder i variable_tables) arr in
           match head_type with
           | Int -> L.const_array i32_t sarr
           | Float -> L.const_array f32_t sarr
@@ -112,14 +138,14 @@ let translate (sprogram : sprogram) =
           | String -> L.const_array pointer_i8_t sarr
           | _ -> raise (Failure "Multi-Dim Array")))
     | STupleLit t -> (let arr = Array.of_list t in
-    let e =  Array.map (fun i -> build_IR_on_expr builder i local_variables global_variables) arr in
+    let e =  Array.map (fun i -> build_IR_on_expr builder i variable_tables) arr in
     let ty = Array.map L.type_of e in
     let s_t = L.struct_type context ty in
               L.const_struct context e)
     | SBinop (e1, op, e2) ->
       (let ty = fst e1 in  
-      let e1' = build_IR_on_expr builder e1 local_variables global_variables
-      and e2' = build_IR_on_expr builder e2 local_variables global_variables in
+      let e1' = build_IR_on_expr builder e1 variable_tables
+      and e2' = build_IR_on_expr builder e2 variable_tables in
       match ty with
         | Int -> (match op with
             A.Add     -> L.build_add
@@ -161,10 +187,10 @@ let translate (sprogram : sprogram) =
         | _ -> raise(Failure "Type Error"))
     | SId s -> (
       try
-        let lv = Hashtbl.find local_variables s in
+        let lv = Hashtbl.find variable_tables.local_variables s in
         L.build_load (snd lv) s builder
       with Not_found -> (
-        let gv = Hashtbl.find global_variables s in
+        let gv = Hashtbl.find variable_tables.global_variables s in
         match fst gv with
         | A.String -> (
           let zero = L.const_int i32_t 0 in
@@ -173,21 +199,14 @@ let translate (sprogram : sprogram) =
         | _ -> L.build_load (snd gv) s builder
       )
     )
-    | SAsn (s, e) -> 
-      (* Plan: 
-        e.code || Gen(s, "=", e.addr)  
-      *)
-      let e_addr = build_IR_on_expr builder e local_variables global_variables in
-      let lv = Hashtbl.find local_variables s in
-      ignore(L.build_store e_addr (snd lv) builder); (* %store %e %s_mem *)
+    | SAsn (s, e) ->
+      let e_addr = build_IR_on_expr builder e variable_tables in
+      let lv = Hashtbl.find variable_tables.local_variables s in
+      ignore(L.build_store e_addr (snd lv) builder);
       e_addr 
-    | SAugAsn (s, ag_op, e) -> 
-      (* Plan: 
-        s = s + e 
-        e.code || Binop(s, e) || assignment   
-      *)
-      let e_addr = build_IR_on_expr builder e local_variables global_variables in 
-      let lv = Hashtbl.find local_variables s in
+    | SAugAsn (s, ag_op, e) ->
+      let e_addr = build_IR_on_expr builder e variable_tables in 
+      let lv = Hashtbl.find variable_tables.local_variables s in
       let loaded = L.build_load (snd lv) "" builder in
       let ty = fst e in
       let op = match ty with 
@@ -208,10 +227,10 @@ let translate (sprogram : sprogram) =
       ignore(L.build_store aug_op_addr (snd lv) builder);
       aug_op_addr
     | SNot e -> 
-      let e_addr = build_IR_on_expr builder e local_variables global_variables in  
+      let e_addr = build_IR_on_expr builder e variable_tables in  
       L.build_not e_addr "tmp" builder
     | SCall ("print", [e]) ->
-      let llval = build_IR_on_expr builder e local_variables global_variables in
+      let llval = build_IR_on_expr builder e variable_tables in
       let arr = if (fst e) = A.String then
         [| llval |]
       else
@@ -221,185 +240,158 @@ let translate (sprogram : sprogram) =
       L.build_call printf_func arr "printf" builder
     | SCall (fname, args) -> 
       let (f_addr, sstmt) = StringMap.find fname func_declarations in 
-      let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) (List.rev args)) in 
+      let llargs = List.rev(List.map (fun e -> build_IR_on_expr builder e variable_tables) (List.rev args)) in 
       L.build_call f_addr (Array.of_list llargs) "" builder
   in
-  let rec build_IR_on_stmt (builder: L.llbuilder) (local_variables) (global_variables) (break_block: L.llbasicblock option) (nested_if_block: L.llbasicblock option) = function
-    (* match sstmt*)
+  let rec build_IR_on_stmt (builder: L.llbuilder) (sstmt: sstmt) (variable_tables: variable_tables) (block_context: block_context) =
+    match sstmt with
     | SBreak -> (
-      let _ = match break_block with
+      let _ = match block_context.break_or_continue_block with
         | None -> ()
         | Some b -> ignore(L.build_br b builder) in
       builder)
     | SExpr e -> 
-      ignore(build_IR_on_expr builder e local_variables global_variables); builder
+      ignore(build_IR_on_expr builder e variable_tables); builder
     | SFunction _ -> builder
-    | SReturn e -> 
-      (* 
-        e.code || 
-        L.build_ret 
-      *)
-      ignore(L.build_ret (build_IR_on_expr builder e local_variables global_variables) builder); builder
+    | SReturn e ->
+      ignore(L.build_ret (build_IR_on_expr builder e variable_tables) builder); builder
     | SIf (pred, stmt1, stmt2) -> 
-      let expr_addr = build_IR_on_expr builder pred  local_variables global_variables in 
+      let expr_addr = build_IR_on_expr builder pred  variable_tables in 
 
       let the_function = L.block_parent (L.insertion_block builder) in
-
-      (* TODO: get the function name that is the parent of the If block *)
-
-      (* 
-        def f1 (x : int, y : int ) -> int 
-          if (x > 8):
-          else:
-        
-        If(e, s1, s2)
-        F1: <- the_function 
-          e.code 
-          cond_br e.addr IF ELSE
-          IF: 
-            s1.code  <- builder
-            jmp END 
-          ELSE:
-            s2.code 
-            jmp END 
-          END:
-      *)
-
       let then_bb = L.append_block context "then" the_function in 
       let else_bb = L.append_block context "else" the_function in 
-      let next_bb = L.append_block context "next" the_function in
+      let next_bb = L.append_block context "fi" the_function in
 
       ignore(L.build_cond_br expr_addr then_bb else_bb builder);
       
-      let then_builder = L.builder_at_end context then_bb in 
-      let next = Some next_bb in 
-      ignore(build_IR_on_stmt_list then_builder stmt1 local_variables global_variables break_block next);
+      let then_builder = L.builder_at_end context then_bb in
+      let new_context = {
+          break_or_continue_block = block_context.break_or_continue_block;
+          nested_continuation_block = Some next_bb;
+      } in
+      ignore(build_IR_on_stmt_list then_builder stmt1 variable_tables new_context);
 
       let else_builder = L.builder_at_end context else_bb in 
-      ignore(build_IR_on_stmt_list else_builder stmt2 local_variables global_variables break_block next);
+      ignore(build_IR_on_stmt_list else_builder stmt2 variable_tables new_context);
 
       let build_br_next = L.build_br next_bb in (* partial function *)
       add_terminal (L.builder_at_end context then_bb) build_br_next;
       add_terminal (L.builder_at_end context else_bb) build_br_next;
 
       (* need to have nested if elses jump back to the previous next block *)
-      let _ = match nested_if_block with
+      let _ = match block_context.nested_continuation_block with
         | Some bb -> ignore(L.build_br bb (L.builder_at_end context next_bb));
         | None -> () in
 
       L.builder_at_end context next_bb
-    | SWhile (e, sl) -> 
-      (*
-      FNAME:
-        jmp COND   
-        COND: 
-          e.code
-          br_cond e.addr BODY END 
-        BODY: 
-          sl.code
-          jmp COND 
-        END: 
-      *)
-
-      (* TODO: Create three blocks: COND, BODY, END*)
+    | SWhile (e, sl) ->
       let the_function = L.block_parent (L.insertion_block builder) in 
 
       let while_bb = L.append_block context "while" the_function in
       let build_br_while = L.build_br while_bb in
       ignore(build_br_while builder);
       let while_builder = L.builder_at_end context while_bb in 
-      let bool_val = build_IR_on_expr while_builder e local_variables global_variables in
+      let bool_val = build_IR_on_expr while_builder e variable_tables in
 
       let body_bb = L.append_block context "while_body" the_function in
-      let end_bb = L.append_block context "while_end" the_function in 
-      let opt = Some end_bb in
-      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl local_variables global_variables opt nested_if_block) build_br_while;
+      let next_bb = L.append_block context "elihw" the_function in
+      let new_context = {
+        break_or_continue_block = Some next_bb;
+        nested_continuation_block = block_context.nested_continuation_block;
+      } in
+      add_terminal (build_IR_on_stmt_list (L.builder_at_end context body_bb) sl variable_tables new_context) build_br_while;
 
-      ignore(L.build_cond_br bool_val body_bb end_bb while_builder);
-      L.builder_at_end context end_bb
+      (* need to have nested while blocks jump back to the previous next block *)
+        let _ = match block_context.nested_continuation_block with
+          | Some bb -> ignore(L.build_br bb (L.builder_at_end context next_bb));
+          | None -> () in
+
+      ignore(L.build_cond_br bool_val body_bb next_bb while_builder);
+      L.builder_at_end context next_bb
       
-    | SFor (var_name, itr, body) -> 
-      (match itr with 
-      | (t, SArrayLit i) -> 
-        let itr_length = List.length i in 
-        let llvals = List.map (fun e -> build_IR_on_expr builder e local_variables global_variables) i in 
-        let llarr = Array.of_list llvals in 
-        let start_val = llarr.(0) in (* for i in [1, 2, 3]*)
-        (* Make the new basic block for the loop header, inserting after current
-        * block. *)
-        let preheader_bb = L.insertion_block builder in
-        let the_function = L.block_parent preheader_bb in
-        let loop_bb = L.append_block context "loop" the_function in 
-        let after_bb = L.append_block context "after" the_function in
+    | SFor (iter_name, iterable, body) -> 
+      (match iterable with
+      | (A.Array (typ, listlength), sx) ->
+        let the_function = L.block_parent (L.insertion_block builder) in
 
-        (* Insert an explicit fall through from the current block to the
-        * loop_bb. *)
+        (* allocate and store array length *)
+        let length_pointer = L.build_alloca i32_t "" builder in
+        ignore(L.build_store (L.const_int i32_t listlength) length_pointer builder);
+
+        (* allocate the iter and pass it into the local variables *)
+        let iter_pointer = get_default_llvalue typ in
+        L.set_value_name iter_name iter_pointer;
+        let iter = L.build_alloca (ltype_of_typ typ) iter_name builder in
+        Hashtbl.add variable_tables.local_variables iter_name (typ, iter);
+
+        (* allocate and store the iterable (aka the array) *)
+        let array_pointer = build_IR_on_expr builder iterable variable_tables in
+        let arr = L.build_alloca (L.type_of array_pointer) "" builder in
+        ignore (L.build_store array_pointer arr builder);
+
+        (* allocate and store the current index of the array *)
+        let curr_index_pointer = L.build_alloca (i32_t) "" builder in
+        ignore (L.build_store (L.const_int i32_t 0) curr_index_pointer builder);
+        
+        let loop_bb = L.append_block context "loop" the_function in
+        let loop_body_bb = L.append_block context "loop_body" the_function in
+        let loop_increment_bb = L.append_block context "loop_increment" the_function in
+        let next_bb = L.append_block context "pool" the_function in
+
         ignore(L.build_br loop_bb builder);
 
-        (* Start insertion in loop_bb. *)
-        L.position_at_end loop_bb builder;
-        let variable = L.build_phi [(start_val, preheader_bb)] var_name builder in
-        (* i = 1 *)
+        (*NOW THE LOOP LOGIC *)
+        let loop_builder = L.builder_at_end context loop_bb in
+        let curr_index = L.build_load curr_index_pointer "" loop_builder in
+        let length = L.build_load length_pointer "" loop_builder in
+        let ltcmp = L.build_icmp L.Icmp.Slt curr_index length "loopcmp" loop_builder in
+        ignore(L.build_cond_br ltcmp loop_body_bb next_bb loop_builder);
+        
+        (* NOW THE LOOP BODY *)
+        (* build loop block *)
+        let loop_body_builder = L.builder_at_end context loop_body_bb in
+        (* load up the curr_index and point it to the appropriate element in the iterable *)
+        let gep = L.build_in_bounds_gep (arr) [| (L.const_int i32_t 0); curr_index |] "" loop_body_builder in
+        let curr_val = L.build_load gep "" loop_body_builder in
+        ignore (L.build_store curr_val iter loop_body_builder);
+        (* build the block *)
+        let new_context = {
+          break_or_continue_block = Some next_bb;
+          nested_continuation_block = block_context.nested_continuation_block;
+        } in
+        let builder_at_end_of_stmt_list = build_IR_on_stmt_list loop_body_builder body variable_tables new_context in
 
-        let rec build_loop_helper (index: int) : L.llbuilder = 
-          if (index < itr_length) then (
-            (* Start the PHI node with an entry for start. *)
-            Hashtbl.add local_variables var_name (t, variable); (* TODO: Get the type of variable *)
-            (* for i in [1, 2, 3]:
-                  x = 2 
-                  print(x) 
-            *)
-            ignore(build_IR_on_stmt_list builder body local_variables global_variables break_block nested_if_block);
-            (* Hashtbl.remove local_variables var_name; *)
-            let loop_end_bb = L.insertion_block builder in 
-            
-            let next_var = llarr.(index) in 
-            L.add_incoming (next_var, loop_end_bb) variable;
-            
-            build_loop_helper (index+1)
-          ) else (
-            L.position_at_end after_bb builder;
-            builder 
-          )
-          in 
-          build_loop_helper 1
+        (* NOW THE LOOP INCREMENT *)
+        let loop_increment_builder = L.builder_at_end context loop_increment_bb in
+        (* increment the current index *)
+        let sum = L.build_add curr_index (L.const_int i32_t 1) "" loop_increment_builder in
+        ignore(L.build_store sum curr_index_pointer loop_increment_builder);
+        ignore(L.build_br loop_bb loop_increment_builder);
+        ignore(L.build_br loop_increment_bb builder_at_end_of_stmt_list);
+
+        (* NOW THE POOL BODY -- RETURN CONTROL FLOW BACK TO THE REST OF THE PROGRAM *)
+        let next_bb_builder = L.builder_at_end context next_bb in
+        next_bb_builder
       | _ -> raise (Failure "Developer Error")
       )
-      
-      (* 
-        SFor(var_name, itr, stmts) -> 
-        HEAD: 
-          itr.code
-          jmp LOOP   
-        LOOP: 
-          - need to store current value of var_name in the symbol table for local variables 
-          stmts.code 
-          jmp HEAD? 
-        END:
-      *)
     | SDecl (id, typ, expr_opt) ->
       if Option.is_some expr_opt then (
           let expr = Option.get expr_opt in
-          let e_addr = build_IR_on_expr builder expr local_variables global_variables in
+          let e_addr = build_IR_on_expr builder expr variable_tables in
           let local_variable = L.build_alloca (L.type_of e_addr) id builder in
-          Hashtbl.add local_variables id (typ, local_variable);
+          Hashtbl.add variable_tables.local_variables id (typ, local_variable);
           ignore(L.build_store e_addr local_variable builder) (* %store %e %s_mem *)
       )
       else (
         let local_variable = L.build_alloca (ltype_of_typ typ) id builder in
-        Hashtbl.add local_variables id (typ, local_variable)
+        Hashtbl.add variable_tables.local_variables id (typ, local_variable)
       );
-
       builder
   and build_IR_on_function = function
   | SFunction (name, formals, rtyp, sl) -> 
     let f_builder = get_function_builder name in
     let (the_function, _) = StringMap.find name func_declarations in
-    (*
-      FNAME: 
-      -> builder   
-    *)
-
     let scoped_local_variables = Hashtbl.copy local_variables in
 
     let add_formal (hash_table: (string, A.typ * L.llvalue) Hashtbl.t) (t: A.typ) (name: string) (pointer: L.llvalue) =
@@ -409,31 +401,27 @@ let translate (sprogram : sprogram) =
       Hashtbl.add hash_table name (t, local) in 
     List.iter2 (fun decl -> add_formal scoped_local_variables (snd decl) (fst decl) ) formals (Array.to_list (L.params the_function));
     
-    let func_builder = build_IR_on_stmt_list f_builder sl scoped_local_variables global_variables None None in
+    let var_tables = {
+      local_variables =  scoped_local_variables;
+      global_variables = global_variables;
+    } in
+    let block_context = {
+      break_or_continue_block = None;
+      nested_continuation_block = None;
+    } in
+    let func_builder = build_IR_on_stmt_list f_builder sl var_tables block_context in
     if rtyp = A.NoneType then
       ignore(L.build_ret_void func_builder)
     else
       add_terminal func_builder (L.build_ret (L.const_int i32_t 0))
   | SDecl (name, typ, expr_opt) ->
-    let default_const = function
-      | A.Int -> L.const_int i32_t 0
-      | A.Float -> L.const_float f32_t 0.
-      | A.String -> L.const_stringz context ""
-      | A.Bool -> L.const_int i1_t 0
-      | _ -> raise (Failure "wrong default type") in
-    let initialized_const = function
-      | SIntLit i -> L.const_int i32_t i
-      | SFloatLit f -> L.const_float f32_t f
-      | SStringLit s -> L.const_stringz context (String.sub s 1 ((String.length s) - 2))
-      | SBoolLit b -> L.const_int i1_t (if b then 1 else 0)
-      | _ -> raise (Failure "wrong constant type") in
     let initial_value = match expr_opt with
-      | None -> default_const typ
-      | Some sexpr -> initialized_const (snd sexpr) in
+      | None -> get_default_llvalue typ
+      | Some sexpr -> get_initialized_const (snd sexpr) in
     Hashtbl.add global_variables name (typ, (L.define_global name initial_value the_module));
   | _ -> ()
-  and build_IR_on_stmt_list builder sl local_variables global_variables (break_block: L.llbasicblock option) (nested_if_block: L.llbasicblock option) = 
-      List.fold_left (fun b s -> build_IR_on_stmt b local_variables global_variables break_block nested_if_block s) builder sl 
+  and build_IR_on_stmt_list builder sl (variable_tables: variable_tables) (block_context: block_context) = 
+      List.fold_left (fun b s -> build_IR_on_stmt b s variable_tables block_context) builder sl 
   in
   (* Unsure the usage of L.builder here but it helps compile for now*)
   (*List.map (build_IR_on_stmt L.builder) sprogram;*)
