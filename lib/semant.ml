@@ -133,7 +133,7 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         and t2, e' = check_expr (decl_vars, decl_funcs, e) in(
         match (t1, t2) with
         | _, NoneType -> raise (Failure "Cannot assign variable to nonetype")
-        | Array (t1, len1), Array (t2, len2) when t1 = t2 -> (t1, SAsn (var, (t2, e')))
+        | Array (t1, len1), Array (t2, len2) when t1 = t2 -> (t2, SAsn (var, (t2, e')))
         | Array(t1, len1), EmptyArray when len1 = 0 -> (t1, SAsn (var, (t2, e')))
         | EmptyArray, Array(t2, len2) when len2 = 0 -> (t1, SAsn (var, (t2, e')))
         | Tuple(typs1), Tuple(typs2) when typs1 = typs2 -> (t1, SAsn (var, (t2, e')))
@@ -236,14 +236,13 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
         let t, e' = check_expr (decl_vars, decl_funcs, e) in
         let s_stmt =
           match t with
-          | Array (array_elem_typ, _) ->
+          | Array (array_elem_typ, ix) ->
               add_var (decl_vars, decl_funcs, id, array_elem_typ);
               SFor (id, (t, e'), List.map check_stmt2 for_block)
           | _ -> raise (Failure "Expect Array")
         in
         s_stmt
     | Decl (id, t, expr_opt) ->
-        add_var (decl_vars, decl_funcs, id, t);
         let some_sexpr =
           match expr_opt with
           | None -> None
@@ -264,7 +263,12 @@ let rec check ?(top_level : bool = true) (program : program) : sprogram =
                     ^ " Received expression type: "
                      ^ string_of_typ (fst sexpr)))
         in
-        SDecl (id, t, some_sexpr)
+        let typ = match some_sexpr with
+          | None -> t
+          | Some (ty, s) -> ty
+        in
+        add_var (decl_vars, decl_funcs, id, typ);
+        SDecl (id, typ, some_sexpr)
   in
   let check_stmt_with_decls st =
     let dummy_function_details = ("", NoneType) in
